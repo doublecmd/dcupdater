@@ -131,13 +131,21 @@ ConsoleWrite("File name: " & $remoteFileName & @CRLF)
 ; ----------------------------------
 ;	Download the file
 ; ----------------------------------
-TrayTip("Download", "Starting to download: " & $fileToDownload, 5, 1)
-
 ;Get file size
 Local $remoteFileSize = InetGetSize($fileToDownload, 1)
 If $remoteFileSize == 0 Then
 	okExit()
 EndIf
+
+#Region ### START Koda GUI section ### Form=C:\Joel\DoubleCmdUpdater\DownloadingForm.kxf
+$StatusForm = GUICreate("Status", 368, 97, 192, 114)
+$descriptionLabel = GUICtrlCreateLabel("Downloading: ", 8, 8, 72, 17)
+$completeLabe = GUICtrlCreateLabel("Complete:", 8, 32, 51, 17)
+$cancelButton = GUICtrlCreateButton("&Cancel", 144, 64, 75, 25, $WS_GROUP)
+$completeLabel = GUICtrlCreateLabel("0 %", 88, 32, 21, 17)
+$fileNameLabel = GUICtrlCreateLabel($remoteFileName, 88, 8, 211, 17)
+GUISetState(@SW_SHOW)
+#EndRegion ### END Koda GUI section ###
 
 ;Start the download
 $hDownload = InetGet($fileToDownload, $remoteFileName, 1, 1)
@@ -145,6 +153,22 @@ Do
 	Sleep(250)
 	Local $downloadedBytes = InetGetInfo($hDownload, 0)
 	Local $completed = Round($downloadedBytes / $remoteFileSize * 100)
+
+	GUICtrlSetData($completeLabel, $completed & " %")
+
+	$nMsg = GUIGetMsg()
+	Switch $nMsg
+		Case $GUI_EVENT_CLOSE
+			InetClose($hDownload)
+			cleanUpDownload()
+			okExit()
+
+		Case $cancelButton
+			InetClose($hDownload)
+			cleanUpDownload()
+			okExit()
+	EndSwitch
+
 Until InetGetInfo($hDownload, 2)
 
 ; Check for download errors
@@ -160,10 +184,10 @@ If $downloadError <> 0 Then
 	okExit()
 EndIf
 
-TrayTip("Download", "Done!", 5, 1)
-
-
 ConsoleWrite("Downloaded to: " & $remoteFileName & @CRLF)
+
+GUICtrlSetData($descriptionLabel, "Extracting")
+GUICtrlSetData($completeLabel, "0 %")
 
 Local $extractCommand = $extractBZ2Command & ' ' & $remoteFileName
 $bz2Extracted = RunWait($extractCommand, @ScriptDir, @SW_HIDE)
@@ -176,6 +200,8 @@ If $bz2Extracted == 0 And @error Then
 	okExit()
 EndIf
 
+GUICtrlSetData($completeLabel, "50 %")
+
 $extractCommand = $extractTARCommand & ' ' & $tarFileName
 $tarExtracted = RunWait($extractCommand, @ScriptDir, @SW_HIDE)
 If $bz2Extracted == 0 And @error Then
@@ -183,8 +209,11 @@ If $bz2Extracted == 0 And @error Then
 	;MsgBox features: Title=Yes, Text=Yes, Buttons=OK, Icon=Critical
 	MsgBox(16,"ERROR","Could not execute command:" & @CRLF & $extractCommand)
 	#EndRegion --- CodeWizard generated code End ---
+	cleanUpDownload()
 	okExit()
 EndIf
+
+GUIDelete($StatusForm)
 
 IniWrite($iniFileName, 'General', 'LastUpdatedRevision', $currentRevision)
 
@@ -197,7 +226,6 @@ Func cleanUpDownload()
 		If FileExists($tarFileName) Then FileDelete($tarFileName)
 	EndIf
 EndFunc
-
 
 Func okExit()
 	If $postExec <> "" Then Run($postExec)
