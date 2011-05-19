@@ -111,23 +111,6 @@ ConsoleWrite("File name: " & $remoteFileName & @CRLF)
 ; ----------------------------------
 ;	Download the file
 ; ----------------------------------
-
-#Region ### START Koda GUI section ### Form=C:\Joel\DoubleCmdUpdater\UpdateForm.kxf
-$Form1 = GUICreate("Downloading...", 351, 58, 192, 114)
-$descriptionLabel = GUICtrlCreateLabel("Downloading snapshot: " & $remoteFileName, 8, 8, 300, 17)
-$Label2 = GUICtrlCreateLabel("Please wait...", 8, 32, 67, 17)
-GUISetState(@SW_SHOW)
-#EndRegion ### END Koda GUI section ###
-
-While 1
-	$nMsg = GUIGetMsg()
-	Switch $nMsg
-		Case $GUI_EVENT_CLOSE
-			okExit()
-	EndSwitch
-WEnd
-
-
 TrayTip("Download", "Starting to download: " & $fileToDownload, 5, 1)
 $bytesDownloaded = InetGet($fileToDownload, $remoteFileName, 1)
 If $bytesDownloaded = 0 and @error Then
