@@ -12,7 +12,7 @@ Const $NOT_FOUND = "NotFound"
 Local $tempDir = IniRead($iniFileName, 'General', 'TempDir', @TempDir & "\")
 Local $architecture = IniRead($iniFileName, 'General', 'Architecture', $NOT_FOUND)
 Local $lastRevision = IniRead($iniFileName, 'General', 'LastUpdatedRevision', $NOT_FOUND)
-Local $postExec = IniRead($iniFileName, 'General', 'PostExecution', "doublecmd")
+Local $postExec = IniRead($iniFileName, 'General', 'PostExecution', "doublecmd --no-console")
 Local $errorSupressInetRead = IniRead($iniFileName, 'Error', 'SupressInetRead', "yes")
 
 Local $updateSite = IniRead($iniFileName, 'Internet', 'UpdateSite', 'http://www.firebirdsql.su/dc/')
