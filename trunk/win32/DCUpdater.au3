@@ -11,9 +11,14 @@ Const $iniFileName = 'dcupdater.ini'
 Const $NOT_FOUND = "NotFound"
 
 ;Load default settings
+Local $update = IniRead($iniFileName, 'General', 'Update', 'yes')
+Local $postExec = IniRead($iniFileName, 'General', 'PostExecution', "doublecmd --no-console")
+
+;Just exit if no update is necessary
+If $update <> "yes" Then okExit()
+
 Local $architecture = IniRead($iniFileName, 'General', 'Architecture', $NOT_FOUND)
 Local $lastRevision = IniRead($iniFileName, 'General', 'LastUpdatedRevision', $NOT_FOUND)
-Local $postExec = IniRead($iniFileName, 'General', 'PostExecution', "doublecmd --no-console")
 Local $errorSupressInetRead = IniRead($iniFileName, 'Error', 'SupressInetRead', "yes")
 
 Local $updateSite = IniRead($iniFileName, 'Internet', 'UpdateSite', 'http://www.firebirdsql.su/dc/')
@@ -25,6 +30,7 @@ Local $extractTARCommand = IniRead($iniFileName, 'Extract', 'TAR', '7z x -y')
 
 ;Create ini-file with defaults if first time
 If Not FileExists($iniFileName) Then
+	IniWrite($iniFileName, 'General', 'Update', $update)
 	IniWrite($iniFileName, 'General', 'Architecture', $architecture)
 	IniWrite($iniFileName, 'General', 'LastUpdatedRevision', $lastRevision)
 	IniWrite($iniFileName, 'General', 'PostExecution', $postExec)
