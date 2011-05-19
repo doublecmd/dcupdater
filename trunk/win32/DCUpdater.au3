@@ -65,8 +65,9 @@ If $updateOnceADay == "yes" Then
 	If $logFile <> "" Then _FileWriteLog($logFile, 'Update once a day')
 	Local $lastUpdateDate = IniRead($iniFileName, 'General', 'LastUpdateDate', $NOT_FOUND)
 
-	If $logFile <> "" Then _FileWriteLog($logFile, 'Comparing last update date "' & $lastUpdateDate & '" and "' & $currentDate & '"')
-	If _DateDiff('d', $lastUpdateDate, $currentDate) > 0 And @error == 0 Then
+	$dateDiff = _DateDiff('d', $lastUpdateDate, $currentDate)
+	If $logFile <> "" Then _FileWriteLog($logFile, 'Comparing last update date "' & $lastUpdateDate & '" and "' & $currentDate & '" = ' & $dateDiff)
+	If $dateDiff < 1 And @error == 0 Then
 		okExit()
 	EndIf
 EndIf
