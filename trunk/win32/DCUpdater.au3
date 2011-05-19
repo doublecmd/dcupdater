@@ -2,6 +2,7 @@
 #AutoIt3Wrapper_icon=..\..\doublecmd.ico
 #AutoIt3Wrapper_UseX64=n
 #EndRegion ;**** Directives created by AutoIt3Wrapper_GUI ****
+#include <Date.au3>
 #include <ButtonConstants.au3>
 #include <GUIConstantsEx.au3>
 #include <StaticConstants.au3>
@@ -18,7 +19,9 @@ Local $postExec = IniRead($iniFileName, 'General', 'PostExecution', "doublecmd -
 If $update <> "yes" Then okExit()
 
 Local $architecture = IniRead($iniFileName, 'General', 'Architecture', $NOT_FOUND)
+Local $updateOnceADay = IniRead($iniFileName, 'General', 'UpdateOnceADay', 'yes')
 Local $lastRevision = IniRead($iniFileName, 'General', 'LastUpdatedRevision', $NOT_FOUND)
+
 Local $errorSupressInetRead = IniRead($iniFileName, 'Error', 'SupressInetRead', "yes")
 
 Local $updateSite = IniRead($iniFileName, 'Internet', 'UpdateSite', 'http://www.firebirdsql.su/dc/')
@@ -31,9 +34,10 @@ Local $extractTARCommand = IniRead($iniFileName, 'Extract', 'TAR', '7z x -y')
 ;Create ini-file with defaults if first time
 If Not FileExists($iniFileName) Then
 	IniWrite($iniFileName, 'General', 'Update', $update)
-	IniWrite($iniFileName, 'General', 'Architecture', $architecture)
-	IniWrite($iniFileName, 'General', 'LastUpdatedRevision', $lastRevision)
 	IniWrite($iniFileName, 'General', 'PostExecution', $postExec)
+	IniWrite($iniFileName, 'General', 'Architecture', $architecture)
+	IniWrite($iniFileName, 'General', 'UpdateOnceADay', $updateOnceADay)
+	IniWrite($iniFileName, 'General', 'LastUpdatedRevision', $lastRevision)
 
 	IniWrite($iniFileName, 'Error', 'SupressInetRead', $errorSupressInetRead)
 
@@ -44,6 +48,15 @@ If Not FileExists($iniFileName) Then
 	IniWrite($iniFileName, 'Extract', 'BZ2', $extractBZ2Command)
 	IniWrite($iniFileName, 'Extract', 'TAR', $extractTARCommand)
 EndIf
+
+;Return ok if already updated today
+If $updateOnceADay == "yes" Then
+	Local $lastUpdateDate = IniRead($iniFileName, 'General', 'LastUpdateDate', $NOT_FOUND)
+	If _NowCalcDate() == $lastUpdateDate Then
+		okExit()
+	EndIf
+EndIf
+
 
 ;Ask for architecture if not set
 If $architecture == $NOT_FOUND Then
@@ -221,6 +234,7 @@ EndIf
 
 GUIDelete($StatusForm)
 
+IniWrite($iniFileName, 'General', 'LastUpdateDate', _NowCalcDate())
 IniWrite($iniFileName, 'General', 'LastUpdatedRevision', $currentRevision)
 
 cleanUpDownload()
@@ -235,7 +249,6 @@ EndFunc
 
 Func okExit()
 	If $postExec <> "" Then Run($postExec)
-
 	Exit
 EndFunc
 
