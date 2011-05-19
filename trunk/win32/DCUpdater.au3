@@ -7,9 +7,10 @@
 #include <StaticConstants.au3>
 #include <WindowsConstants.au3>
 
-Const $iniFileName = 'doublecmd_updater.ini'
+Const $iniFileName = 'dcupdater.ini'
 Const $NOT_FOUND = "NotFound"
-Local $tempDir = IniRead($iniFileName, 'General', 'TempDir', @TempDir & "\")
+
+;Load default settings
 Local $architecture = IniRead($iniFileName, 'General', 'Architecture', $NOT_FOUND)
 Local $lastRevision = IniRead($iniFileName, 'General', 'LastUpdatedRevision', $NOT_FOUND)
 Local $postExec = IniRead($iniFileName, 'General', 'PostExecution', "doublecmd --no-console")
@@ -22,6 +23,23 @@ Local $deleteDownloadedFiles = IniRead($iniFileName, 'Extract', 'DeleteDownloade
 Local $extractBZ2Command = IniRead($iniFileName, 'Extract', 'BZ2', '7z x -y')
 Local $extractTARCommand = IniRead($iniFileName, 'Extract', 'TAR', '7z x -y')
 
+;Create ini-file with defaults if first time
+If Not FileExists($iniFileName) Then
+	IniWrite($iniFileName, 'General', 'Architecture', $architecture)
+	IniWrite($iniFileName, 'General', 'LastUpdatedRevision', $lastRevision)
+	IniWrite($iniFileName, 'General', 'PostExecution', $postExec)
+
+	IniWrite($iniFileName, 'Error', 'SupressInetRead', $errorSupressInetRead)
+
+	IniWrite($iniFileName, 'Internet', 'UpdateSite', $updateSite)
+	IniWrite($iniFileName, 'Internet', 'RegExGetRevision', $regexGetRevision)
+
+	IniWrite($iniFileName, 'Extract', 'DeleteDownloadedFiles', $deleteDownloadedFiles)
+	IniWrite($iniFileName, 'Extract', 'BZ2', $extractBZ2Command)
+	IniWrite($iniFileName, 'Extract', 'TAR', $extractTARCommand)
+EndIf
+
+;Ask for architecture if not set
 If $architecture == $NOT_FOUND Then
 	#Region ### START Koda GUI section ### Form=c:\joel\doublecmdupdater\form1.kxf
 	$Form1_1 = GUICreate("Select Architecture...", 281, 227, 192, 114)
@@ -75,6 +93,7 @@ If $architecture == $NOT_FOUND Then
 	GUIDelete($Form1_1)
 EndIf
 
+;Read snapshots site (HTML)
 Local $siteData = InetRead($updateSite)
 If $siteData == "" And @error Then
 	If $errorSupressInetRead <> "yes" Then
@@ -93,7 +112,7 @@ $currentRevision = StringRegExpReplace($updateSiteString, $regexGetRevision, "$1
 ConsoleWrite("Revision: " & $currentRevision & @CRLF)
 
 ;Check if update is necessary
-If $lastRevision <> $NOT_FOUND Then
+If $lastRevision <> $NOT_FOUND And IsNumber($currentRevision) And IsNumber($lastRevision) Then
 	$cRevision = Number($currentRevision)
 	$lRevision = Number($lastRevision)
 
@@ -113,14 +132,34 @@ ConsoleWrite("File name: " & $remoteFileName & @CRLF)
 ;	Download the file
 ; ----------------------------------
 TrayTip("Download", "Starting to download: " & $fileToDownload, 5, 1)
-$bytesDownloaded = InetGet($fileToDownload, $remoteFileName, 1)
-If $bytesDownloaded = 0 and @error Then
+
+;Get file size
+Local $remoteFileSize = InetGetSize($fileToDownload, 1)
+If $remoteFileSize == 0 Then
+	okExit()
+EndIf
+
+;Start the download
+$hDownload = InetGet($fileToDownload, $remoteFileName, 1, 1)
+Do
+	Sleep(250)
+	Local $downloadedBytes = InetGetInfo($hDownload, 0)
+	Local $completed = Round($downloadedBytes / $remoteFileSize * 100)
+Until InetGetInfo($hDownload, 2)
+
+; Check for download errors
+Local $downloadError = InetGetInfo($hDownload, 4)
+InetClose($hDownload)
+
+If $downloadError <> 0 Then
 	#Region --- CodeWizard generated code Start ---
 	;MsgBox features: Title=Yes, Text=Yes, Buttons=OK, Icon=Critical
 	MsgBox(16,"ERROR","Could not download snapshot:" & @CRLF & '"' & $fileToDownload & '"')
 	#EndRegion --- CodeWizard generated code End ---
+	cleanUpDownload()
 	okExit()
 EndIf
+
 TrayTip("Download", "Done!", 5, 1)
 
 
