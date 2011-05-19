@@ -98,7 +98,7 @@ If $lastRevision <> $NOT_FOUND Then
 	$lRevision = Number($lastRevision)
 
 	If $lastRevision == $cRevision Or $lastRevision > $cRevision Then
-		TrayTip("DoubleCmd", "DoubleCmd already updated to revision: " + $currentRevision, 5, 1)
+		TrayTip("DoubleCmd", "DoubleCmd already up to date (revision: " & $currentRevision & ")", 5, 1)
 		okExit()
 	EndIf
 EndIf
@@ -133,6 +133,7 @@ If $bz2Extracted == 0 And @error Then
 	;MsgBox features: Title=Yes, Text=Yes, Buttons=OK, Icon=Critical
 	MsgBox(16,"ERROR","Could not execute command:" & @CRLF & $extractCommand)
 	#EndRegion --- CodeWizard generated code End ---
+	cleanUpDownload()
 	okExit()
 EndIf
 
@@ -146,14 +147,18 @@ If $bz2Extracted == 0 And @error Then
 	okExit()
 EndIf
 
-If $deleteDownloadedFiles == "yes" Then
-	FileDelete($remoteFileName)
-	FileDelete($tarFileName)
-EndIf
-
 IniWrite($iniFileName, 'General', 'LastUpdatedRevision', $currentRevision)
 
+cleanUpDownload()
 okExit()
+
+Func cleanUpDownload()
+	If $deleteDownloadedFiles == "yes" Then
+		If FileExists($remoteFileName) Then FileDelete($remoteFileName)
+		If FileExists($tarFileName) Then FileDelete($tarFileName)
+	EndIf
+EndFunc
+
 
 Func okExit()
 	If $postExec <> "" Then Run($postExec)
