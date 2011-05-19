@@ -153,7 +153,7 @@ $updateSiteString = BinaryToString($siteData)
 If $logFile <> "" Then _FileWriteLog($logFile, 'Finding revision string using: ' & $regexGetRevision)
 $currentRevision = StringRegExpReplace($updateSiteString, $regexGetRevision, "$1")
 
-If IsNumber($currentRevision) == 0 Then
+If StringIsInt($currentRevision) == 0 Then
 	If $logFile <> "" Then _FileWriteLog($logFile, 'Found revision string is not a number: "' & $currentRevision & '"')
 	okExit()
 EndIf
@@ -161,7 +161,7 @@ EndIf
 ;Check if update is necessary
 $logMessage = 'Checking latest updated revision (last revision: ' & $lastRevision & ', remote revision: ' & $currentRevision & ')'
 If $logFile <> "" Then _FileWriteLog($logFile, $logMessage)
-If $lastRevision <> $NOT_FOUND And IsNumber($currentRevision) == 1 And IsNumber($lastRevision) == 1 Then
+If $lastRevision <> $NOT_FOUND And StringIsInt($currentRevision) And StringIsInt($lastRevision) Then
 	$cRevision = Number($currentRevision)
 	$lRevision = Number($lastRevision)
 
@@ -239,7 +239,7 @@ If $downloadError <> 0 Then
 	okExit()
 EndIf
 
-If $logFile <> "" Then _FileWriteLog($logFile, 'File downloaded to: ' & $remoteFileName)
+If $logFile <> "" Then _FileWriteLog($logFile, 'File downloaded to: ' & $remoteFileName & ' (size: ' & $remoteFileSize & ')')
 
 GUICtrlSetData($descriptionLabel, "Extracting")
 GUICtrlSetData($completeLabel, "0 %")
