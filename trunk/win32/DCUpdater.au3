@@ -150,20 +150,19 @@ $updateSiteString = BinaryToString($siteData)
 If $logFile <> "" Then _FileWriteLog($logFile, 'Finding revision string using: ' & $regexGetRevision)
 $currentRevision = StringRegExpReplace($updateSiteString, $regexGetRevision, "$1")
 
-If Not IsNumber($currentRevision) Then
-	If $logFile <> "" Then _FileWriteLog($logFile, 'Found revision string is not a number: ' & $currentRevision)
+If IsNumber($currentRevision) == 0 Then
+	If $logFile <> "" Then _FileWriteLog($logFile, 'Found revision string is not a number: "' & $currentRevision & '"')
 	okExit()
 EndIf
 
 ;Check if update is necessary
 $logMessage = 'Checking latest updated revision (last revision: ' & $lastRevision & ', remote revision: ' & $currentRevision & ')'
 If $logFile <> "" Then _FileWriteLog($logFile, $logMessage)
-If $lastRevision <> $NOT_FOUND And IsNumber($currentRevision) And IsNumber($lastRevision) Then
+If $lastRevision <> $NOT_FOUND And IsNumber($currentRevision) == 1 And IsNumber($lastRevision) == 1 Then
 	$cRevision = Number($currentRevision)
 	$lRevision = Number($lastRevision)
 
 	If $lastRevision == $cRevision Or $lastRevision > $cRevision Then
-		TrayTip("DoubleCmd", "DoubleCmd already up to date (revision: " & $currentRevision & ")", 5, 1)
 		okExit()
 	EndIf
 EndIf
