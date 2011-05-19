@@ -18,6 +18,8 @@ Local $postExec = IniRead($iniFileName, 'General', 'PostExecution', "doublecmd -
 ;Just exit if no update is necessary
 If $update <> "yes" Then okExit()
 
+Const $currentDate = _NowCalcDate()
+
 Local $architecture = IniRead($iniFileName, 'General', 'Architecture', $NOT_FOUND)
 Local $updateOnceADay = IniRead($iniFileName, 'General', 'UpdateOnceADay', 'yes')
 Local $lastRevision = IniRead($iniFileName, 'General', 'LastUpdatedRevision', $NOT_FOUND)
@@ -52,11 +54,10 @@ EndIf
 ;Return ok if already updated today
 If $updateOnceADay == "yes" Then
 	Local $lastUpdateDate = IniRead($iniFileName, 'General', 'LastUpdateDate', $NOT_FOUND)
-	If _NowCalcDate() == $lastUpdateDate Then
+	If _DateDiff('d', $lastUpdateDate, $currentDate) > 0 And @error == 0 Then
 		okExit()
 	EndIf
 EndIf
-
 
 ;Ask for architecture if not set
 If $architecture == $NOT_FOUND Then
@@ -234,7 +235,7 @@ EndIf
 
 GUIDelete($StatusForm)
 
-IniWrite($iniFileName, 'General', 'LastUpdateDate', _NowCalcDate())
+IniWrite($iniFileName, 'General', 'LastUpdateDate', $currentDate)
 IniWrite($iniFileName, 'General', 'LastUpdatedRevision', $currentRevision)
 
 cleanUpDownload()
