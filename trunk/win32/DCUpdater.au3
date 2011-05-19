@@ -2,6 +2,7 @@
 #AutoIt3Wrapper_icon=..\..\doublecmd.ico
 #AutoIt3Wrapper_UseX64=n
 #EndRegion ;**** Directives created by AutoIt3Wrapper_GUI ****
+#include <File.au3>
 #include <Date.au3>
 #include <ButtonConstants.au3>
 #include <GUIConstantsEx.au3>
@@ -12,11 +13,17 @@ Const $iniFileName = 'dcupdater.ini'
 Const $NOT_FOUND = "NotFound"
 
 ;Load default settings
+Local $logFile = IniRead($iniFileName, 'General', 'LogFile', '')
+
+If $logFile <> "" Then _FileWriteLog($logFile, 'Loading ini file settings: ' & $iniFileName)
 Local $update = IniRead($iniFileName, 'General', 'Update', 'yes')
 Local $postExec = IniRead($iniFileName, 'General', 'PostExecution', "doublecmd --no-console")
 
 ;Just exit if no update is necessary
-If $update <> "yes" Then okExit()
+If $update <> "yes" Then
+	If $logFile <> "" Then _FileWriteLog($logFile, 'Update is not "yes": ' & $update)
+	okExit()
+EndIf
 
 Const $currentDate = _NowCalcDate()
 
@@ -35,6 +42,8 @@ Local $extractTARCommand = IniRead($iniFileName, 'Extract', 'TAR', '7z x -y')
 
 ;Create ini-file with defaults if first time
 If Not FileExists($iniFileName) Then
+	If $logFile <> "" Then _FileWriteLog($logFile, 'Writing defaults to ini file: ' & $iniFileName)
+	IniWrite($iniFileName, 'General', 'LogFile', $logFile)
 	IniWrite($iniFileName, 'General', 'Update', $update)
 	IniWrite($iniFileName, 'General', 'PostExecution', $postExec)
 	IniWrite($iniFileName, 'General', 'Architecture', $architecture)
@@ -53,7 +62,10 @@ EndIf
 
 ;Return ok if already updated today
 If $updateOnceADay == "yes" Then
+	If $logFile <> "" Then _FileWriteLog($logFile, 'Update once a day')
 	Local $lastUpdateDate = IniRead($iniFileName, 'General', 'LastUpdateDate', $NOT_FOUND)
+
+	If $logFile <> "" Then _FileWriteLog($logFile, 'Comparing last update date "' & $lastUpdateDate & '" and "' & $currentDate & '"')
 	If _DateDiff('d', $lastUpdateDate, $currentDate) > 0 And @error == 0 Then
 		okExit()
 	EndIf
@@ -61,7 +73,9 @@ EndIf
 
 ;Ask for architecture if not set
 If $architecture == $NOT_FOUND Then
+	If $logFile <> "" Then _FileWriteLog($logFile, 'Architecture setting not found')
 	#Region ### START Koda GUI section ### Form=c:\joel\doublecmdupdater\form1.kxf
+	If $logFile <> "" Then _FileWriteLog($logFile, 'Creating architecture settings GUI')
 	$Form1_1 = GUICreate("Select Architecture...", 281, 227, 192, 114)
 	$Group1 = GUICtrlCreateGroup("Architecture: ", 8, 8, 265, 177)
 	$radioGTKi = GUICtrlCreateRadio("GTK2 [i386]", 24, 32, 113, 17)
@@ -73,6 +87,7 @@ If $architecture == $NOT_FOUND Then
 	GUICtrlCreateGroup("", -99, -99, 1, 1)
 	$okButton = GUICtrlCreateButton("&Ok", 184, 192, 81, 25, $WS_GROUP)
 	$cancelButton = GUICtrlCreateButton("&Cancel", 104, 192, 73, 25, $WS_GROUP)
+	If $logFile <> "" Then _FileWriteLog($logFile, 'Show architecture settings GUI')
 	GUISetState(@SW_SHOW)
 	#EndRegion ### END Koda GUI section ###
 
@@ -80,7 +95,7 @@ If $architecture == $NOT_FOUND Then
 		$nMsg = GUIGetMsg()
 		Switch $nMsg
 			Case $GUI_EVENT_CLOSE
-				Exit
+				okExit()
 
 			Case $okButton
 				If BitAND(GUICtrlRead($radioGTKi), $GUI_CHECKED) = $GUI_CHECKED Then
@@ -103,19 +118,23 @@ If $architecture == $NOT_FOUND Then
 					okExit()
 				EndIf
 
+				If $logFile <> "" Then _FileWriteLog($logFile, 'Writing new architecture settings to ini file: ' & $architecture)
 				IniWrite($iniFileName, 'General', 'Architecture', $architecture)
 				ExitLoop
 			Case $cancelButton
-				Exit
+				okExit()
 		EndSwitch
 	WEnd
 
+	If $logFile <> "" Then _FileWriteLog($logFile, 'Deleting architecture settings GUI')
 	GUIDelete($Form1_1)
 EndIf
 
 ;Read snapshots site (HTML)
+If $logFile <> "" Then _FileWriteLog($logFile, 'Reading update site: ' & $updateSite)
 Local $siteData = InetRead($updateSite)
 If $siteData == "" And @error Then
+	If $logFile <> "" Then _FileWriteLog($logFile, '[ERROR] Can not read update site: ' & $updateSite)
 	If $errorSupressInetRead <> "yes" Then
 		#Region --- CodeWizard generated code Start ---
 		;MsgBox features: Title=Yes, Text=Yes, Buttons=OK, Icon=Critical
@@ -125,13 +144,20 @@ If $siteData == "" And @error Then
 	okExit()
 EndIf
 
+If $logFile <> "" Then _FileWriteLog($logFile, 'Converting site data to string')
 $updateSiteString = BinaryToString($siteData)
-ConsoleWrite("Revision: " & $updateSiteString & @CRLF)
 
+If $logFile <> "" Then _FileWriteLog($logFile, 'Finding revision string using: ' & $regexGetRevision)
 $currentRevision = StringRegExpReplace($updateSiteString, $regexGetRevision, "$1")
-ConsoleWrite("Revision: " & $currentRevision & @CRLF)
+
+If Not IsNumber($currentRevision) Then
+	If $logFile <> "" Then _FileWriteLog($logFile, 'Found revision string is not a number: ' & $currentRevision)
+	okExit()
+EndIf
 
 ;Check if update is necessary
+$logMessage = 'Checking latest updated revision (last revision: ' & $lastRevision & ', remote revision: ' & $currentRevision & ')'
+If $logFile <> "" Then _FileWriteLog($logFile, $logMessage)
 If $lastRevision <> $NOT_FOUND And IsNumber($currentRevision) And IsNumber($lastRevision) Then
 	$cRevision = Number($currentRevision)
 	$lRevision = Number($lastRevision)
@@ -146,28 +172,34 @@ EndIf
 $tarFileName = "doublecmd.0.4.6.r" & $currentRevision & "." & $architecture & ".tar"
 $remoteFileName = $tarFileName & ".bz2"
 $fileToDownload = $updateSite & $remoteFileName
-ConsoleWrite("File name: " & $remoteFileName & @CRLF)
 
 ; ----------------------------------
 ;	Download the file
 ; ----------------------------------
 ;Get file size
+If $logFile <> "" Then _FileWriteLog($logFile, 'Checking remote file size (' & $fileToDownload & ')')
 Local $remoteFileSize = InetGetSize($fileToDownload, 1)
+
+If $logFile <> "" Then _FileWriteLog($logFile, 'Remote file size: ' & $remoteFileSize & ' [@error: ' & @error & ']')
 If $remoteFileSize == 0 Then
 	okExit()
 EndIf
 
+If $logFile <> "" Then _FileWriteLog($logFile, 'Creating GUI for status')
 #Region ### START Koda GUI section ### Form=C:\Joel\DoubleCmdUpdater\DownloadingForm.kxf
 $StatusForm = GUICreate("Status", 368, 97, 192, 114)
 $descriptionLabel = GUICtrlCreateLabel("Downloading: ", 8, 8, 72, 17)
 $completeLabe = GUICtrlCreateLabel("Complete:", 8, 32, 51, 17)
 $cancelButton = GUICtrlCreateButton("&Cancel", 144, 64, 75, 25, $WS_GROUP)
-$completeLabel = GUICtrlCreateLabel("0 %", 88, 32, 21, 17)
-$fileNameLabel = GUICtrlCreateLabel($remoteFileName, 88, 8, 211, 17)
+$completeLabel = GUICtrlCreateLabel("0 %", 88, 32, 250, 17)
+$fileNameLabel = GUICtrlCreateLabel($remoteFileName, 88, 8, 250, 17)
+
+If $logFile <> "" Then _FileWriteLog($logFile, 'Show GUI for status')
 GUISetState(@SW_SHOW)
 #EndRegion ### END Koda GUI section ###
 
 ;Start the download
+If $logFile <> "" Then _FileWriteLog($logFile, 'Starting download: ' & $fileToDownload & ' -> ' & $remoteFileName)
 $hDownload = InetGet($fileToDownload, $remoteFileName, 1, 1)
 Do
 	Sleep(250)
@@ -196,6 +228,7 @@ Local $downloadError = InetGetInfo($hDownload, 4)
 InetClose($hDownload)
 
 If $downloadError <> 0 Then
+	If $logFile <> "" Then _FileWriteLog($logFile, '[ERROR] Download error: ' & $downloadError)
 	#Region --- CodeWizard generated code Start ---
 	;MsgBox features: Title=Yes, Text=Yes, Buttons=OK, Icon=Critical
 	MsgBox(16,"ERROR","Could not download snapshot:" & @CRLF & '"' & $fileToDownload & '"')
@@ -204,37 +237,44 @@ If $downloadError <> 0 Then
 	okExit()
 EndIf
 
-ConsoleWrite("Downloaded to: " & $remoteFileName & @CRLF)
+If $logFile <> "" Then _FileWriteLog($logFile, 'File downloaded to: ' & $remoteFileName)
 
 GUICtrlSetData($descriptionLabel, "Extracting")
 GUICtrlSetData($completeLabel, "0 %")
 
-Local $extractCommand = $extractBZ2Command & ' ' & $remoteFileName
-$bz2Extracted = RunWait($extractCommand, @ScriptDir, @SW_HIDE)
-If $bz2Extracted == 0 And @error Then
-	#Region --- CodeWizard generated code Start ---
-	;MsgBox features: Title=Yes, Text=Yes, Buttons=OK, Icon=Critical
-	MsgBox(16,"ERROR","Could not execute command:" & @CRLF & $extractCommand)
-	#EndRegion --- CodeWizard generated code End ---
-	cleanUpDownload()
-	okExit()
-EndIf
+If $extractBZ2Command <> "" Then
+	$extractCommand = $extractBZ2Command & ' ' & $remoteFileName
+	If $logFile <> "" Then _FileWriteLog($logFile, 'Extracting bz2: ' & $extractCommand)
+	$bz2Extracted = RunWait($extractCommand, @ScriptDir, @SW_HIDE)
+	If $bz2Extracted == 0 And @error Then
+		#Region --- CodeWizard generated code Start ---
+		;MsgBox features: Title=Yes, Text=Yes, Buttons=OK, Icon=Critical
+		MsgBox(16,"ERROR","Could not execute command:" & @CRLF & $extractCommand)
+		#EndRegion --- CodeWizard generated code End ---
+		cleanUpDownload()
+		okExit()
+	EndIf
 
-GUICtrlSetData($completeLabel, "50 %")
+	GUICtrlSetData($completeLabel, "50 %")
 
-$extractCommand = $extractTARCommand & ' ' & $tarFileName
-$tarExtracted = RunWait($extractCommand, @ScriptDir, @SW_HIDE)
-If $bz2Extracted == 0 And @error Then
-	#Region --- CodeWizard generated code Start ---
-	;MsgBox features: Title=Yes, Text=Yes, Buttons=OK, Icon=Critical
-	MsgBox(16,"ERROR","Could not execute command:" & @CRLF & $extractCommand)
-	#EndRegion --- CodeWizard generated code End ---
-	cleanUpDownload()
-	okExit()
+	If $extractTARCommand <> "" Then
+		$extractCommand = $extractTARCommand & ' ' & $tarFileName
+		If $logFile <> "" Then _FileWriteLog($logFile, 'Extracting tar: ' & $extractCommand)
+		$tarExtracted = RunWait($extractCommand, @ScriptDir, @SW_HIDE)
+		If $bz2Extracted == 0 And @error Then
+			#Region --- CodeWizard generated code Start ---
+			;MsgBox features: Title=Yes, Text=Yes, Buttons=OK, Icon=Critical
+			MsgBox(16,"ERROR","Could not execute command:" & @CRLF & $extractCommand)
+			#EndRegion --- CodeWizard generated code End ---
+			cleanUpDownload()
+			okExit()
+		EndIf
+	EndIf
 EndIf
 
 GUIDelete($StatusForm)
 
+If $logFile <> "" Then _FileWriteLog($logFile, 'Writing to ini LastUpdateDate')
 IniWrite($iniFileName, 'General', 'LastUpdateDate', $currentDate)
 IniWrite($iniFileName, 'General', 'LastUpdatedRevision', $currentRevision)
 
@@ -243,13 +283,29 @@ okExit()
 
 Func cleanUpDownload()
 	If $deleteDownloadedFiles == "yes" Then
-		If FileExists($remoteFileName) Then FileDelete($remoteFileName)
-		If FileExists($tarFileName) Then FileDelete($tarFileName)
+		If $logFile <> "" Then _FileWriteLog($logFile, 'Clean up downloaded files')
+
+		If FileExists($remoteFileName) Then
+			If $logFile <> "" Then _FileWriteLog($logFile, 'Removing file: ' & $remoteFileName)
+			FileDelete($remoteFileName)
+		EndIf
+
+		If FileExists($tarFileName) Then
+			If $logFile <> "" Then _FileWriteLog($logFile, 'Removing file: ' & $tarFileName)
+			FileDelete($tarFileName)
+		EndIf
+	Else
+		If $logFile <> "" Then _FileWriteLog($logFile, 'No clean up of downloaded files')
 	EndIf
 EndFunc
 
 Func okExit()
-	If $postExec <> "" Then Run($postExec)
+	If $postExec <> "" Then
+		If $logFile <> "" Then _FileWriteLog($logFile, 'PostExecuting: ' & $postExec)
+		Run($postExec)
+	EndIf
+
+	If $logFile <> "" Then _FileWriteLog($logFile, 'Exiting script')
 	Exit
 EndFunc
 
