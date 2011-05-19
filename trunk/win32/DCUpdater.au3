@@ -66,8 +66,10 @@ If $updateOnceADay == "yes" Then
 	Local $lastUpdateDate = IniRead($iniFileName, 'General', 'LastUpdateDate', $NOT_FOUND)
 
 	$dateDiff = _DateDiff('d', $lastUpdateDate, $currentDate)
-	If $logFile <> "" Then _FileWriteLog($logFile, 'Comparing last update date "' & $lastUpdateDate & '" and "' & $currentDate & '" = ' & $dateDiff)
-	If $dateDiff < 1 And @error == 0 Then
+	$diffError = @error
+	$logMessage = 'Comparing last update date "' & $lastUpdateDate & '" and "' & $currentDate & '" = ' & $dateDiff & ', @error = ' & $diffError
+	If $logFile <> "" Then _FileWriteLog($logFile, $logMessage)
+	If $dateDiff < 1 And $diffError == 0 Then
 		okExit()
 	EndIf
 EndIf
