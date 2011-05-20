@@ -1,6 +1,8 @@
 #Region ;**** Directives created by AutoIt3Wrapper_GUI ****
 #AutoIt3Wrapper_icon=..\..\doublecmd.ico
 #AutoIt3Wrapper_UseX64=n
+#AutoIt3Wrapper_Res_Comment=Double Commander Snapshot Updater
+#AutoIt3Wrapper_Res_Description=Snapshot updater for Double Commander
 #EndRegion ;**** Directives created by AutoIt3Wrapper_GUI ****
 #include <File.au3>
 #include <Date.au3>
