@@ -18,8 +18,22 @@ Const $NOT_FOUND = "NotFound"
 Local $logFile = IniRead($iniFileName, 'General', 'LogFile', '')
 
 If $logFile <> "" Then _FileWriteLog($logFile, 'Loading ini file settings: ' & $iniFileName)
-Local $update = IniRead($iniFileName, 'General', 'Update', 'yes')
+Local $fileDoubleCommander = IniRead($iniFileName, 'General', 'DoubleCommanderFile', "doublecmd.exe")
 Local $postExec = IniRead($iniFileName, 'General', 'PostExecution', "doublecmd --no-console")
+
+If $logFile <> "" Then _FileWriteLog($logFile, 'Checking write permissions on: ' & $fileDoubleCommander)
+If Not FileExists($fileDoubleCommander) Then
+	If $logFile <> "" Then _FileWriteLog($logFile, 'Could not find file: ' & $fileDoubleCommander)
+	okExit()
+EndIf
+
+Local $fileAttributes = FileGetAttrib($fileDoubleCommander)
+If StringInStr($fileAttributes, "R") Then
+	If $logFile <> "" Then _FileWriteLog($logFile, 'File is read-only, probably already running: ' & $fileDoubleCommander)
+	okExit()
+EndIf
+
+Local $update = IniRead($iniFileName, 'General', 'Update', 'yes')
 
 ;Just exit if no update is necessary
 If $update <> "yes" Then
@@ -49,6 +63,7 @@ If Not FileExists($iniFileName) Then
 	If $logFile <> "" Then _FileWriteLog($logFile, 'Writing defaults to ini file: ' & $iniFileName)
 	IniWrite($iniFileName, 'General', 'LogFile', $logFile)
 	IniWrite($iniFileName, 'General', 'Update', $update)
+	IniWrite($iniFileName, 'General', 'DoubleCommanderFile', $fileDoubleCommander)
 	IniWrite($iniFileName, 'General', 'PostExecution', $postExec)
 	IniWrite($iniFileName, 'General', 'Architecture', $architecture)
 	IniWrite($iniFileName, 'General', 'UpdateOnceADay', $updateOnceADay)
