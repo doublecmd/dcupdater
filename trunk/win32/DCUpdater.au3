@@ -31,6 +31,8 @@ Local $architecture = IniRead($iniFileName, 'General', 'Architecture', $NOT_FOUN
 Local $updateOnceADay = IniRead($iniFileName, 'General', 'UpdateOnceADay', 'yes')
 Local $lastRevision = IniRead($iniFileName, 'General', 'LastUpdatedRevision', $NOT_FOUND)
 
+Local $translationFile = IniRead($iniFileName, 'General', 'TranslationFile', $NOT_FOUND)
+
 Local $errorSupressInetRead = IniRead($iniFileName, 'Error', 'SupressInetRead', "yes")
 
 Local $updateSite = IniRead($iniFileName, 'Internet', 'UpdateSite', 'http://www.firebirdsql.su/dc/')
@@ -50,6 +52,8 @@ If Not FileExists($iniFileName) Then
 	IniWrite($iniFileName, 'General', 'UpdateOnceADay', $updateOnceADay)
 	IniWrite($iniFileName, 'General', 'LastUpdatedRevision', $lastRevision)
 
+	IniWrite($iniFileName, 'General', 'TranslationFile', $translationFile)
+
 	IniWrite($iniFileName, 'Error', 'SupressInetRead', $errorSupressInetRead)
 
 	IniWrite($iniFileName, 'Internet', 'UpdateSite', $updateSite)
@@ -59,6 +63,37 @@ If Not FileExists($iniFileName) Then
 	IniWrite($iniFileName, 'Extract', 'BZ2', $extractBZ2Command)
 	IniWrite($iniFileName, 'Extract', 'TAR', $extractTARCommand)
 EndIf
+
+;Load translations
+Local $tOKButton = IniRead($translationFile, 'Translations', 'OkButton', "&Ok")
+Local $tCancelButton = IniRead($translationFile, 'Translations', 'CancelButton', "&Cancel")
+
+Local $tArchitectureFormTitle = IniRead($translationFile, 'Translations', 'ArchitectureFormTitle', "Select Architecture...")
+Local $tArchitectureGroupTitle = IniRead($translationFile, 'Translations', 'ArchitectureGroupTitle', "Architecture")
+
+Local $tStatusFormTitle = IniRead($translationFile, 'Translations', 'StatusFormTitle', "Status...")
+Local $tStatusCompleteLabel = IniRead($translationFile, 'Translations', 'StatusCompleteLabel', "Complete")
+Local $tStatusDownloadLabel = IniRead($translationFile, 'Translations', 'StatusDownloadLabel', "Downloading")
+Local $tStatusExtractingLabel = IniRead($translationFile, 'Translations', 'StatusExtractLabel', "Extracting")
+
+;If first time, store default translations
+If $translationFile == $NOT_FOUND Then
+	$translationFile = 'dcupdater.po'
+
+	IniWrite($translationFile, 'Translations', 'OkButton', 					$tOKButton)
+	IniWrite($translationFile, 'Translations', 'CancelButton', 				$tCancelButton)
+
+	IniWrite($translationFile, 'Translations', 'ArchitectureFormTitle', 	$tArchitectureFormTitle)
+	IniWrite($translationFile, 'Translations', 'ArchitectureGroupTitle', 	$tArchitectureGroupTitle)
+
+	IniWrite($translationFile, 'Translations', 'StatusFormTitle', 			$tStatusFormTitle)
+	IniWrite($translationFile, 'Translations', 'StatusCompleteLabel', 		$tStatusCompleteLabel)
+	IniWrite($translationFile, 'Translations', 'StatusDownloadLabel', 		$tStatusDownloadLabel)
+	IniWrite($translationFile, 'Translations', 'StatusExtractLabel', 		$tStatusExtractingLabel)
+
+	IniWrite($iniFileName, 'General', 'TranslationFile', $translationFile)
+EndIf
+
 
 ;Return ok if already updated today
 If $updateOnceADay == "yes" Then
@@ -77,10 +112,9 @@ EndIf
 ;Ask for architecture if not set
 If $architecture == $NOT_FOUND Then
 	If $logFile <> "" Then _FileWriteLog($logFile, 'Architecture setting not found')
-	#Region ### START Koda GUI section ### Form=c:\joel\doublecmdupdater\form1.kxf
 	If $logFile <> "" Then _FileWriteLog($logFile, 'Creating architecture settings GUI')
-	$Form1_1 = GUICreate("Select Architecture...", 281, 227, 192, 114)
-	$Group1 = GUICtrlCreateGroup("Architecture: ", 8, 8, 265, 177)
+	$Form1_1 = GUICreate($tArchitectureFormTitle, 281, 227, 192, 114)
+	$Group1 = GUICtrlCreateGroup($tArchitectureGroupTitle & ": ", 8, 8, 265, 177)
 	$radioGTKi = GUICtrlCreateRadio("GTK2 [i386]", 24, 32, 113, 17)
 	$radioGTKx = GUICtrlCreateRadio("GTK2 [x64]", 24, 56, 113, 17)
 	$radioQTi = GUICtrlCreateRadio("QT [i386]", 24, 80, 113, 17)
@@ -88,11 +122,10 @@ If $architecture == $NOT_FOUND Then
 	$radioWINi = GUICtrlCreateRadio("Win [i386]", 24, 128, 105, 17)
 	$radioWINx = GUICtrlCreateRadio("Win [x64]", 24, 152, 113, 17)
 	GUICtrlCreateGroup("", -99, -99, 1, 1)
-	$okButton = GUICtrlCreateButton("&Ok", 184, 192, 81, 25, $WS_GROUP)
-	$cancelButton = GUICtrlCreateButton("&Cancel", 104, 192, 73, 25, $WS_GROUP)
+	$okButton = GUICtrlCreateButton($tOKButton, 184, 192, 81, 25, $WS_GROUP)
+	$cancelButton = GUICtrlCreateButton($tCancelButton, 104, 192, 73, 25, $WS_GROUP)
 	If $logFile <> "" Then _FileWriteLog($logFile, 'Show architecture settings GUI')
 	GUISetState(@SW_SHOW)
-	#EndRegion ### END Koda GUI section ###
 
 	While 1
 		$nMsg = GUIGetMsg()
@@ -188,17 +221,15 @@ If $remoteFileSize == 0 Then
 EndIf
 
 If $logFile <> "" Then _FileWriteLog($logFile, 'Creating GUI for status')
-#Region ### START Koda GUI section ### Form=C:\Joel\DoubleCmdUpdater\DownloadingForm.kxf
-$StatusForm = GUICreate("Status", 368, 97, 192, 114)
-$descriptionLabel = GUICtrlCreateLabel("Downloading: ", 8, 8, 72, 17)
-$completeLabe = GUICtrlCreateLabel("Complete:", 8, 32, 51, 17)
-$cancelButton = GUICtrlCreateButton("&Cancel", 144, 64, 75, 25, $WS_GROUP)
+$StatusForm = GUICreate($tStatusFormTitle, 368, 97, 192, 114)
+$descriptionLabel = GUICtrlCreateLabel($tStatusDownloadLabel & ": ", 8, 8, 72, 17)
+$completeLabe = GUICtrlCreateLabel( $tStatusCompleteLabel & ":", 8, 32, 51, 17)
+$cancelButton = GUICtrlCreateButton($tCancelButton, 144, 64, 75, 25, $WS_GROUP)
 $completeLabel = GUICtrlCreateLabel("0 %", 88, 32, 250, 17)
 $fileNameLabel = GUICtrlCreateLabel($remoteFileName, 88, 8, 250, 17)
 
 If $logFile <> "" Then _FileWriteLog($logFile, 'Show GUI for status')
 GUISetState(@SW_SHOW)
-#EndRegion ### END Koda GUI section ###
 
 ;Start the download
 Local $lastComplete = -1
@@ -243,7 +274,7 @@ EndIf
 
 If $logFile <> "" Then _FileWriteLog($logFile, 'File downloaded to: ' & $remoteFileName & ' (size: ' & $remoteFileSize & ')')
 
-GUICtrlSetData($descriptionLabel, "Extracting")
+GUICtrlSetData($descriptionLabel, $tStatusExtractingLabel & ": ")
 GUICtrlSetData($completeLabel, "0 %")
 
 If $extractBZ2Command <> "" Then
