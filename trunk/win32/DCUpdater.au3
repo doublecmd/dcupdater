@@ -201,6 +201,7 @@ GUISetState(@SW_SHOW)
 #EndRegion ### END Koda GUI section ###
 
 ;Start the download
+Local $lastComplete = -1
 If $logFile <> "" Then _FileWriteLog($logFile, 'Starting download: ' & $fileToDownload & ' -> ' & $remoteFileName)
 $hDownload = InetGet($fileToDownload, $remoteFileName, 1, 1)
 Do
@@ -208,7 +209,8 @@ Do
 	Local $downloadedBytes = InetGetInfo($hDownload, 0)
 	Local $completed = Round($downloadedBytes / $remoteFileSize * 100)
 
-	GUICtrlSetData($completeLabel, $completed & " %")
+	If $completed <> $lastComplete Then GUICtrlSetData($completeLabel, $completed & " %")
+	$lastComplete = $completed
 
 	$nMsg = GUIGetMsg()
 	Switch $nMsg
