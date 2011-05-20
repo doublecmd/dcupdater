@@ -216,6 +216,7 @@ If $lastRevision <> $NOT_FOUND And StringIsInt($currentRevision) And StringIsInt
 	$lRevision = Number($lastRevision)
 
 	If $lastRevision == $cRevision Or $lastRevision > $cRevision Then
+		IniWrite($iniFileName, 'General', 'LastUpdateDate', $currentDate)
 		okExit()
 	EndIf
 EndIf
