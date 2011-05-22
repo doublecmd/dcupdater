@@ -3,12 +3,13 @@
 #AutoIt3Wrapper_UseX64=n
 #AutoIt3Wrapper_Res_Comment=Double Commander Snapshot Updater
 #AutoIt3Wrapper_Res_Description=Snapshot updater for Double Commander
-#AutoIt3Wrapper_Res_Fileversion=1.1
+#AutoIt3Wrapper_Res_Fileversion=1.2
 #EndRegion ;**** Directives created by AutoIt3Wrapper_GUI ****
 #include <File.au3>
 #include <Date.au3>
 #include <ButtonConstants.au3>
 #include <GUIConstantsEx.au3>
+#include <EditConstants.au3>
 #include <StaticConstants.au3>
 #include <WindowsConstants.au3>
 
@@ -34,11 +35,11 @@ If StringInStr($fileAttributes, "R") Then
 	okExit()
 EndIf
 
-Local $update = IniRead($iniFileName, 'General', 'Update', 'yes')
+Local $update = IniRead($iniFileName, 'General', 'Update', 'ask')
 
 ;Just exit if no update is necessary
-If $update <> "yes" Then
-	If $logFile <> "" Then _FileWriteLog($logFile, 'Update is not "yes": ' & $update)
+If $update <> "yes" And $update <> "ask" Then
+	If $logFile <> "" Then _FileWriteLog($logFile, 'Update is not "yes" or "ask": ' & $update)
 	okExit()
 EndIf
 
@@ -93,6 +94,7 @@ Local $tStatusFormTitle = IniRead($translationFile, 'Translations', 'StatusFormT
 Local $tStatusCompleteLabel = IniRead($translationFile, 'Translations', 'StatusCompleteLabel', "Complete")
 Local $tStatusDownloadLabel = IniRead($translationFile, 'Translations', 'StatusDownloadLabel', "Downloading")
 Local $tStatusExtractingLabel = IniRead($translationFile, 'Translations', 'StatusExtractLabel', "Extracting")
+Local $tChangelogLabel = IniRead($translationFile, 'Translations', 'StatusChangelogLabel', "Changelog")
 
 ;If first time, store default translations
 If $translationFile == $NOT_FOUND Then
@@ -220,12 +222,50 @@ If $lastRevision <> $NOT_FOUND And StringIsInt($currentRevision) And StringIsInt
 		IniWrite($iniFileName, 'General', 'LastUpdateDate', $currentDate)
 		okExit()
 	EndIf
+ElseIf $lastRevision <> $NOT_FOUND And $lastRevision <> "" Then
+	If $logFile <> "" Then _FileWriteLog($logFile, "[ERROR] Could not compare numbers")
+	okExit()
 EndIf
+
+If $update == "ask" Then
+	#Region --- CodeWizard generated code Start ---
+	;MsgBox features: Title=Yes, Text=Yes, Buttons=Yes and No, Icon=Question, Timeout=10 ss
+	If Not IsDeclared("iMsgBoxAnswer") Then Local $iMsgBoxAnswer
+	$iMsgBoxAnswer = MsgBox(36,"DCUpdater","New snapshot (" & $currentRevision & ") is available!" & @CRLF & @CRLF & "Do you want to update?",10)
+	Select
+		Case $iMsgBoxAnswer = 6 ;Yes
+			;Do nothing... continue with update
+		Case $iMsgBoxAnswer = -1 ;Timeout
+			;Do nothing... continue with update
+		Case $iMsgBoxAnswer = 7 ;No
+			okExit()
+	EndSelect
+	#EndRegion --- CodeWizard generated code End ---
+EndIf
+
 
 ;Construct filenames
 $tarFileName = "doublecmd.0.4.6.r" & $currentRevision & "." & $architecture & ".tar"
+$changelogFileName = "doublecmd.0.4.6.r" & $currentRevision & ".last.change.txt"
 $remoteFileName = $tarFileName & ".bz2"
+$changelogDownload = $updateSite & $changelogFileName
 $fileToDownload = $updateSite & $remoteFileName
+
+
+; ----------------------------------
+;	Download change log
+; ----------------------------------
+If $logFile <> "" Then _FileWriteLog($logFile, 'Downloading changelog: ' & $changelogDownload)
+Local $changelogText = ""
+Local $changelogData = InetRead($changelogDownload, 1)
+If @error Then
+	If $logFile <> "" Then _FileWriteLog($logFile, '[ERROR] Could not download changelog data')
+Else
+	$changelogText = BinaryToString($changelogData)
+	$changelogText = StringRegExpReplace($changelogText, "\r?\n", @CRLF)
+EndIf
+
+
 
 ; ----------------------------------
 ;	Download the file
@@ -240,12 +280,14 @@ If $remoteFileSize == 0 Then
 EndIf
 
 If $logFile <> "" Then _FileWriteLog($logFile, 'Creating GUI for status')
-$StatusForm = GUICreate($tStatusFormTitle, 368, 97, 192, 114)
+$StatusForm = GUICreate($tStatusFormTitle, 370, 385, 192, 114)
 $descriptionLabel = GUICtrlCreateLabel($tStatusDownloadLabel & ": ", 8, 8, 72, 17)
 $completeLabe = GUICtrlCreateLabel( $tStatusCompleteLabel & ":", 8, 32, 51, 17)
-$cancelButton = GUICtrlCreateButton($tCancelButton, 144, 64, 75, 25, $WS_GROUP)
+$cancelButton = GUICtrlCreateButton($tCancelButton, 144, 352, 75, 25, $WS_GROUP)
 $completeLabel = GUICtrlCreateLabel("0 %", 88, 32, 250, 17)
 $fileNameLabel = GUICtrlCreateLabel($remoteFileName, 88, 8, 250, 17)
+$changelogLabel = GUICtrlCreateLabel($tChangelogLabel & ": ", 8, 56, 58, 17)
+$changelogEdit = GUICtrlCreateEdit($changelogText, 8, 80, 353, 265, BitOR($ES_MULTILINE, $ES_AUTOVSCROLL,$ES_AUTOHSCROLL,$ES_READONLY,$ES_WANTRETURN,$WS_HSCROLL,$WS_VSCROLL))
 
 If $logFile <> "" Then _FileWriteLog($logFile, 'Show GUI for status')
 GUISetState(@SW_SHOW)
@@ -255,7 +297,6 @@ Local $lastComplete = -1
 If $logFile <> "" Then _FileWriteLog($logFile, 'Starting download: ' & $fileToDownload & ' -> ' & $remoteFileName)
 $hDownload = InetGet($fileToDownload, $remoteFileName, 1, 1)
 Do
-	Sleep(250)
 	Local $downloadedBytes = InetGetInfo($hDownload, 0)
 	Local $completed = Round($downloadedBytes / $remoteFileSize * 100)
 
@@ -265,12 +306,16 @@ Do
 	$nMsg = GUIGetMsg()
 	Switch $nMsg
 		Case $GUI_EVENT_CLOSE
+			If $logFile <> "" Then _FileWriteLog($logFile, 'Window closed, canceling download.')
 			InetClose($hDownload)
+			GUIDelete($StatusForm)
 			cleanUpDownload()
 			okExit()
 
 		Case $cancelButton
+			If $logFile <> "" Then _FileWriteLog($logFile, 'Cancel pressed, canceling download.')
 			InetClose($hDownload)
+			GUIDelete($StatusForm)
 			cleanUpDownload()
 			okExit()
 	EndSwitch
