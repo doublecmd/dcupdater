@@ -19,10 +19,26 @@ Const $iniFileName = 'dcupdater.ini'
 Const $NOT_FOUND = ""
 
 ;Load default settings
-Local $logFile = IniRead($workingDir & $iniFileName, 'General', 'LogFile', '')
+Local $logFile = IniRead($workingDir & $iniFileName, 'General', 'LogFile', $NOT_FOUND)
 
 If $logFile <> "" Then _FileWriteLog($workingDir & $logFile, 'Loading ini file settings: ' & $iniFileName)
 Local $postExec = IniRead($workingDir & $iniFileName, 'General', 'PostExecution', "doublecmd --no-console")
+
+If $logFile <> "" Then _FileWriteLog($logFile, 'Checking for doublecmd.exe/doublecmd')
+If Not FileExists($workingDir & 'doublecmd.exe') And Not FileExists($workingDir & 'doublecmd') Then
+	If $logFile <> "" Then _FileWriteLog($logFile, 'Could not find file: doublecmd.exe/doublecmd')
+	okExit()
+EndIf
+
+Local $fileDoubleCommander = $workingDir & 'doublecmd.exe'
+If Not FileExists($fileDoubleCommander) Then $fileDoubleCommander = $workingDir & 'doublecmd'
+
+If $logFile <> "" Then _FileWriteLog($logFile, 'Checking write permissions on: ' & $fileDoubleCommander)
+Local $fileAttributes = FileGetAttrib($fileDoubleCommander)
+If StringInStr($fileAttributes, "R") Then
+	If $logFile <> "" Then _FileWriteLog($logFile, 'File is read-only, probably already running: ' & $fileDoubleCommander)
+	okExit()
+EndIf
 
 Local $update = IniRead($workingDir & $iniFileName, 'General', 'Update', 'ask')
 
@@ -395,7 +411,7 @@ Func okExit()
 		Run($postExec)
 	EndIf
 
-	If $logFile <> "" Then _FileWriteLog($workingDir & $logFile, 'Exiting script')
+	If $logFile <> "" Then _FileWriteLog($workingDir & $logFile, '******** Exiting script ********')
 	Exit
 EndFunc
 
