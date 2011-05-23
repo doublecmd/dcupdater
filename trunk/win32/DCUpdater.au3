@@ -46,12 +46,12 @@ Local $updateSite = IniRead($workingDir & $iniFileName, 'Internet', 'UpdateSite'
 Local $regexGetRevision = IniRead($workingDir & $iniFileName, 'Internet', 'RegExGetRevision', "(?mis).*?dcrevision\s+(\d+).*")
 
 Local $deleteDownloadedFiles = IniRead($workingDir & $iniFileName, 'Extract', 'DeleteDownloadedFiles', 'yes')
+
 Local $extractBZ2Command = IniRead($workingDir & $iniFileName, 'Extract', 'BZ2', '7z x -y')
 Local $extractTARCommand = IniRead($workingDir & $iniFileName, 'Extract', 'TAR', '7z x -y')
 
 ;Create ini-file with defaults if first time
 If Not FileExists($workingDir & $iniFileName) Then
-
 	promptSettings()
 
 	If $logFile <> "" Then _FileWriteLog($workingDir & $logFile, 'Writing defaults to ini file: ' & $iniFileName)
@@ -408,9 +408,6 @@ Func promptSettings()
 	$Label3 = GUICtrlCreateLabel("Update:", 8, 10, 42, 17)
 	$comboUpdate = GUICtrlCreateCombo("", 104, 8, 345, 25, BitOR($CBS_DROPDOWNLIST,$CBS_AUTOHSCROLL))
 	GUICtrlSetData(-1, "yes|ask|no", $update)
-	$Label4 = GUICtrlCreateLabel("DoubleCmd Path:", 8, 42, 87, 17)
-	$editPath = GUICtrlCreateInput(@ScriptDir, 104, 40, 313, 21)
-	$buttonBrowsePath = GUICtrlCreateButton("...", 424, 38, 27, 25, $WS_GROUP)
 	$Label5 = GUICtrlCreateLabel("Once a day:", 8, 72, 62, 17)
 	$checkUpdateOnceADay = GUICtrlCreateCheckbox("Limit check for update to once a day", 104, 72, 345, 17)
 	If $updateOnceADay == "yes" Then GuiCtrlSetState(-1, $GUI_CHECKED)
@@ -442,9 +439,6 @@ Func promptSettings()
 		Switch $nMsg
 			Case $GUI_EVENT_CLOSE
 				okExit()
-			Case $buttonBrowsePath
-				Local $selectedFolder = FileSelectFolder('Select DoubleCmd folder...', '', 2)
-				If Not @error Then GUICtrlSetData($editPath, $selectedFolder)
 			Case $buttonBrowseTranslation
 				Local $selectedFile = FileOpenDialog("Select translation file...", '', 'Translations (*.po)', 1)
 				If Not @error Then GUICtrlSetData($editTranslation, $selectedFile)
