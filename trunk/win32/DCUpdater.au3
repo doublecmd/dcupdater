@@ -15,7 +15,7 @@
 #include <ComboConstants.au3>
 
 Const $iniFileName = 'dcupdater.ini'
-Const $NOT_FOUND = "NotFound"
+Const $NOT_FOUND = ""
 
 ;Load default settings
 Local $logFile = IniRead($iniFileName, 'General', 'LogFile', '')
@@ -413,50 +413,81 @@ Func okExit()
 EndFunc
 
 Func promptSettings()
-	$SettingsForm = GUICreate("Settings...", 458, 378, 192, 114)
+	$SettingsForm = GUICreate("DCUpdater Settings...", 458, 378, 192, 114)
 	$Label1 = GUICtrlCreateLabel("Post Execution: ", 8, 282, 81, 17)
-	$editPostExecution = GUICtrlCreateInput("doublecmd", 104, 280, 345, 21)
+	$editPostExecution = GUICtrlCreateInput($postExec, 104, 280, 345, 21)
 	GUICtrlSetTip(-1, "Command to execute when finishing this script")
 	$Label2 = GUICtrlCreateLabel("Log file:", 8, 314, 41, 17)
 	$Label3 = GUICtrlCreateLabel("Update:", 8, 10, 42, 17)
 	$comboUpdate = GUICtrlCreateCombo("", 104, 8, 345, 25, BitOR($CBS_DROPDOWNLIST,$CBS_AUTOHSCROLL))
-	GUICtrlSetData(-1, "yes|ask|no", "ask")
+	GUICtrlSetData(-1, "yes|ask|no", $update)
 	$Label4 = GUICtrlCreateLabel("DoubleCmd Path:", 8, 42, 87, 17)
-	$editPath = GUICtrlCreateInput("@ScriptDir", 104, 40, 313, 21)
+	$editPath = GUICtrlCreateInput(@ScriptDir, 104, 40, 313, 21)
 	$buttonBrowsePath = GUICtrlCreateButton("...", 424, 38, 27, 25, $WS_GROUP)
 	$Label5 = GUICtrlCreateLabel("Once a day:", 8, 72, 62, 17)
 	$checkUpdateOnceADay = GUICtrlCreateCheckbox("Limit check for update to once a day", 104, 72, 345, 17)
+	If $updateOnceADay == "yes" Then GuiCtrlSetState(-1, $GUI_CHECKED)
 	$Label6 = GUICtrlCreateLabel("Translation:", 8, 100, 59, 17)
-	$editTranslation = GUICtrlCreateInput("dcupdater.po", 104, 98, 313, 21)
+	$editTranslation = GUICtrlCreateInput($translationFile, 104, 98, 313, 21)
 	$buttonBrowseTranslation = GUICtrlCreateButton("...", 424, 96, 27, 25, $WS_GROUP)
 	$Label7 = GUICtrlCreateLabel("Update site:", 8, 130, 61, 17)
-	$editUpdateSite = GUICtrlCreateInput("http://www.firebirdsql.su/dc/", 104, 128, 345, 21)
+	$editUpdateSite = GUICtrlCreateInput($updateSite, 104, 128, 345, 21)
 	$Label8 = GUICtrlCreateLabel("Regex revision:", 8, 162, 77, 17)
-	$editRegexRevision = GUICtrlCreateInput("(?mis).*?dcrevision\s+(\d+).*", 104, 160, 345, 21)
+	$editRegexRevision = GUICtrlCreateInput($regexGetRevision, 104, 160, 345, 21)
 	$Label9 = GUICtrlCreateLabel("Clean up:", 8, 192, 49, 17)
 	$checkboxDelete = GUICtrlCreateCheckbox("&Delete downloaded files on exit", 104, 192, 345, 17)
+	If $deleteDownloadedFiles == "yes" Then GuiCtrlSetState(-1, $GUI_CHECKED)
 	$Label10 = GUICtrlCreateLabel("Extract BZ2:", 8, 218, 63, 17)
-	$editExtractBz2 = GUICtrlCreateInput("7z x -y", 104, 216, 345, 21)
+	$editExtractBz2 = GUICtrlCreateInput($extractBZ2Command, 104, 216, 345, 21)
 	GUICtrlSetTip(-1, "Command for extracting BZ2 file. Default value requires 7z in PATH")
 	$Label11 = GUICtrlCreateLabel("Extract TAR:", 8, 250, 65, 17)
-	$editExtractTar = GUICtrlCreateInput("7z x -y", 104, 248, 345, 21)
+	$editExtractTar = GUICtrlCreateInput($extractTARCommand, 104, 248, 345, 21)
 	GUICtrlSetTip(-1, "Command for extracting TAR file. Default value requires 7z in PATH. Can be empty")
-	$editLogFile = GUICtrlCreateInput("dcupdater.log", 104, 312, 345, 21)
+	$editLogFile = GUICtrlCreateInput($logFile, 104, 312, 345, 21)
 	$buttonOk = GUICtrlCreateButton("&Ok", 376, 344, 75, 25, $WS_GROUP)
 	$buttonCancel = GUICtrlCreateButton("&Cancel", 296, 344, 75, 25, $WS_GROUP)
 	GUISetState(@SW_SHOW)
 	#EndRegion ### END Koda GUI section ###
 
+	Local $saveSettings = False
 	While 1
 		$nMsg = GUIGetMsg()
 		Switch $nMsg
 			Case $GUI_EVENT_CLOSE
-				Exit
-
+				okExit()
 			Case $buttonBrowsePath
+				Local $selectedFolder = FileSelectFolder('Select DoubleCmd folder...', '', 2)
+				If Not @error Then GUICtrlSetData($editPath, $selectedFolder)
 			Case $buttonBrowseTranslation
+				Local $selectedFile = FileOpenDialog("Select translation file...", '', 'Translations (*.po)', 1)
+				If Not @error Then GUICtrlSetData($editTranslation, $selectedFile)
 			Case $buttonOk
+				$saveSettings = True
+				ExitLoop
 			Case $buttonCancel
+				okExit()
 		EndSwitch
 	WEnd
+
+	If $saveSettings Then
+		$postExec = GUICtrlRead($editPostExecution)
+		$logFile = GUICtrlRead($editLogFile)
+		$update = GUICtrlRead($comboUpdate)
+
+		$tempCheckUpdate = GUICtrlRead($checkUpdateOnceADay)
+		If $tempCheckUpdate Then $updateOnceADay = "yes"
+
+		$translationFile = GUICtrlRead($editTranslation)
+		$updateSite = GUICtrlRead($editUpdateSite)
+		$regexGetRevision = GUICtrlRead($editRegexRevision)
+
+		$tempDelete = GUICtrlRead($deleteDownloadedFiles)
+		If $tempDelete Then $deleteDownloadedFiles = "yes"
+
+		$extractBZ2Command = GUICtrlRead($editExtractBz2)
+		$extractTARCommand = GUICtrlRead($editExtractTar)
+	EndIf
+
+	GUIDelete($SettingsForm)
+
 EndFunc
