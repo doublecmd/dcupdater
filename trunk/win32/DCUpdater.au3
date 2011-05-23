@@ -12,6 +12,7 @@
 #include <EditConstants.au3>
 #include <StaticConstants.au3>
 #include <WindowsConstants.au3>
+#include <ComboConstants.au3>
 
 Const $iniFileName = 'dcupdater.ini'
 Const $NOT_FOUND = "NotFound"
@@ -62,6 +63,9 @@ Local $extractTARCommand = IniRead($iniFileName, 'Extract', 'TAR', '7z x -y')
 
 ;Create ini-file with defaults if first time
 If Not FileExists($iniFileName) Then
+
+	promptSettings()
+
 	If $logFile <> "" Then _FileWriteLog($logFile, 'Writing defaults to ini file: ' & $iniFileName)
 	IniWrite($iniFileName, 'General', 'LogFile', $logFile)
 	IniWrite($iniFileName, 'General', 'Update', $update)
@@ -408,3 +412,51 @@ Func okExit()
 	Exit
 EndFunc
 
+Func promptSettings()
+	$SettingsForm = GUICreate("Settings...", 458, 378, 192, 114)
+	$Label1 = GUICtrlCreateLabel("Post Execution: ", 8, 282, 81, 17)
+	$editPostExecution = GUICtrlCreateInput("doublecmd", 104, 280, 345, 21)
+	GUICtrlSetTip(-1, "Command to execute when finishing this script")
+	$Label2 = GUICtrlCreateLabel("Log file:", 8, 314, 41, 17)
+	$Label3 = GUICtrlCreateLabel("Update:", 8, 10, 42, 17)
+	$comboUpdate = GUICtrlCreateCombo("", 104, 8, 345, 25, BitOR($CBS_DROPDOWNLIST,$CBS_AUTOHSCROLL))
+	GUICtrlSetData(-1, "yes|ask|no", "ask")
+	$Label4 = GUICtrlCreateLabel("DoubleCmd Path:", 8, 42, 87, 17)
+	$editPath = GUICtrlCreateInput("@ScriptDir", 104, 40, 313, 21)
+	$buttonBrowsePath = GUICtrlCreateButton("...", 424, 38, 27, 25, $WS_GROUP)
+	$Label5 = GUICtrlCreateLabel("Once a day:", 8, 72, 62, 17)
+	$checkUpdateOnceADay = GUICtrlCreateCheckbox("Limit check for update to once a day", 104, 72, 345, 17)
+	$Label6 = GUICtrlCreateLabel("Translation:", 8, 100, 59, 17)
+	$editTranslation = GUICtrlCreateInput("dcupdater.po", 104, 98, 313, 21)
+	$buttonBrowseTranslation = GUICtrlCreateButton("...", 424, 96, 27, 25, $WS_GROUP)
+	$Label7 = GUICtrlCreateLabel("Update site:", 8, 130, 61, 17)
+	$editUpdateSite = GUICtrlCreateInput("http://www.firebirdsql.su/dc/", 104, 128, 345, 21)
+	$Label8 = GUICtrlCreateLabel("Regex revision:", 8, 162, 77, 17)
+	$editRegexRevision = GUICtrlCreateInput("(?mis).*?dcrevision\s+(\d+).*", 104, 160, 345, 21)
+	$Label9 = GUICtrlCreateLabel("Clean up:", 8, 192, 49, 17)
+	$checkboxDelete = GUICtrlCreateCheckbox("&Delete downloaded files on exit", 104, 192, 345, 17)
+	$Label10 = GUICtrlCreateLabel("Extract BZ2:", 8, 218, 63, 17)
+	$editExtractBz2 = GUICtrlCreateInput("7z x -y", 104, 216, 345, 21)
+	GUICtrlSetTip(-1, "Command for extracting BZ2 file. Default value requires 7z in PATH")
+	$Label11 = GUICtrlCreateLabel("Extract TAR:", 8, 250, 65, 17)
+	$editExtractTar = GUICtrlCreateInput("7z x -y", 104, 248, 345, 21)
+	GUICtrlSetTip(-1, "Command for extracting TAR file. Default value requires 7z in PATH. Can be empty")
+	$editLogFile = GUICtrlCreateInput("dcupdater.log", 104, 312, 345, 21)
+	$buttonOk = GUICtrlCreateButton("&Ok", 376, 344, 75, 25, $WS_GROUP)
+	$buttonCancel = GUICtrlCreateButton("&Cancel", 296, 344, 75, 25, $WS_GROUP)
+	GUISetState(@SW_SHOW)
+	#EndRegion ### END Koda GUI section ###
+
+	While 1
+		$nMsg = GUIGetMsg()
+		Switch $nMsg
+			Case $GUI_EVENT_CLOSE
+				Exit
+
+			Case $buttonBrowsePath
+			Case $buttonBrowseTranslation
+			Case $buttonOk
+			Case $buttonCancel
+		EndSwitch
+	WEnd
+EndFunc
