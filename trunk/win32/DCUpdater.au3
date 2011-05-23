@@ -3,7 +3,7 @@
 #AutoIt3Wrapper_UseX64=n
 #AutoIt3Wrapper_Res_Comment=Double Commander Snapshot Updater
 #AutoIt3Wrapper_Res_Description=Snapshot updater for Double Commander
-#AutoIt3Wrapper_Res_Fileversion=1.2
+#AutoIt3Wrapper_Res_Fileversion=1.3
 #EndRegion ;**** Directives created by AutoIt3Wrapper_GUI ****
 #include <File.au3>
 #include <Date.au3>
