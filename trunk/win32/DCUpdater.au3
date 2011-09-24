@@ -60,6 +60,7 @@ Local $errorSupressInetRead = IniRead($workingDir & $iniFileName, 'Error', 'Supr
 
 Local $updateSite = IniRead($workingDir & $iniFileName, 'Internet', 'UpdateSite', 'http://www.firebirdsql.su/dc/')
 Local $regexGetRevision = IniRead($workingDir & $iniFileName, 'Internet', 'RegExGetRevision', "(?mis).*?dcrevision\s+(\d+).*")
+Local $doublecmdVersion = IniRead($workingDir & $iniFileName, 'Internet', 'DoublecmdVersion', "doublecmd.0.5.5.r")
 
 Local $deleteDownloadedFiles = IniRead($workingDir & $iniFileName, 'Extract', 'DeleteDownloadedFiles', 'yes')
 
@@ -84,6 +85,7 @@ If Not FileExists($workingDir & $iniFileName) Then
 
 	IniWrite($workingDir & $iniFileName, 'Internet', 'UpdateSite', $updateSite)
 	IniWrite($workingDir & $iniFileName, 'Internet', 'RegExGetRevision', $regexGetRevision)
+	IniWrite($workingDir & $iniFileName, 'Internet', 'DoublecmdVersion', $doublecmdVersion)
 
 	IniWrite($workingDir & $iniFileName, 'Extract', 'DeleteDownloadedFiles', $deleteDownloadedFiles)
 	IniWrite($workingDir & $iniFileName, 'Extract', 'BZ2', $extractBZ2Command)
@@ -252,8 +254,8 @@ EndIf
 
 
 ;Construct filenames
-$tarFileName = "doublecmd.0.4.6.r" & $currentRevision & "." & $architecture & ".tar"
-$changelogFileName = "doublecmd.0.4.6.r" & $currentRevision & ".last.change.txt"
+$tarFileName = $doublecmdVersion & $currentRevision & "." & $architecture & ".tar"
+$changelogFileName = $doublecmdVersion & $currentRevision & ".last.change.txt"
 $remoteFileName = $tarFileName & ".bz2"
 $changelogDownload = $updateSite & $changelogFileName
 $fileToDownload = $updateSite & $remoteFileName
