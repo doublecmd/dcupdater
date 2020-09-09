@@ -1,9 +1,9 @@
 #Region ;**** Directives created by AutoIt3Wrapper_GUI ****
 #AutoIt3Wrapper_icon=..\..\doublecmd.ico
-#AutoIt3Wrapper_UseX64=n
+#AutoIt3Wrapper_Outfile_x64=DCUpdater.exe
 #AutoIt3Wrapper_Res_Comment=Double Commander Snapshot Updater
 #AutoIt3Wrapper_Res_Description=Snapshot updater for Double Commander
-#AutoIt3Wrapper_Res_Fileversion=1.3
+#AutoIt3Wrapper_Res_Fileversion=1.5.1.0
 #EndRegion ;**** Directives created by AutoIt3Wrapper_GUI ****
 #include <File.au3>
 #include <Date.au3>
@@ -58,14 +58,15 @@ Local $translationFile = IniRead($workingDir & $iniFileName, 'General', 'Transla
 
 Local $errorSupressInetRead = IniRead($workingDir & $iniFileName, 'Error', 'SupressInetRead', "yes")
 
-Local $updateSite = IniRead($workingDir & $iniFileName, 'Internet', 'UpdateSite', 'http://www.firebirdsql.su/dc/')
-Local $regexGetRevision = IniRead($workingDir & $iniFileName, 'Internet', 'RegExGetRevision', "(?mis).*?dcrevision\s+(\d+).*")
-Local $doublecmdVersion = IniRead($workingDir & $iniFileName, 'Internet', 'DoublecmdVersion', "doublecmd.0.5.5.r")
+Local $updateSite = IniRead($workingDir & $iniFileName, 'Internet', 'UpdateSite', 'http://doublecmd.sourceforge.net/snapshots/')
+Local $regexGetRevision = IniRead($workingDir & $iniFileName, 'Internet', 'RegExGetRevision', "(?mis)(\d+).*")
+Local $doublecmdVersion = IniRead($workingDir & $iniFileName, 'Internet', 'DoublecmdVersion', "doublecmd-1.0.0.r")
 
 Local $deleteDownloadedFiles = IniRead($workingDir & $iniFileName, 'Extract', 'DeleteDownloadedFiles', 'yes')
 
-Local $extractBZ2Command = IniRead($workingDir & $iniFileName, 'Extract', 'BZ2', '7z x -y')
-Local $extractTARCommand = IniRead($workingDir & $iniFileName, 'Extract', 'TAR', '7z x -y')
+;Local $extractBZ2Command = IniRead($workingDir & $iniFileName, 'Extract', 'BZ2', '7z x -y')
+;Local $extractTARCommand = IniRead($workingDir & $iniFileName, 'Extract', 'TAR', '7z x -y')
+Local $extract7ZCommand = IniRead($workingDir & $iniFileName, 'Extract', '7Z', '7z x -y')
 
 ;Create ini-file with defaults if first time
 If Not FileExists($workingDir & $iniFileName) Then
@@ -88,8 +89,9 @@ If Not FileExists($workingDir & $iniFileName) Then
 	IniWrite($workingDir & $iniFileName, 'Internet', 'DoublecmdVersion', $doublecmdVersion)
 
 	IniWrite($workingDir & $iniFileName, 'Extract', 'DeleteDownloadedFiles', $deleteDownloadedFiles)
-	IniWrite($workingDir & $iniFileName, 'Extract', 'BZ2', $extractBZ2Command)
-	IniWrite($workingDir & $iniFileName, 'Extract', 'TAR', $extractTARCommand)
+;	IniWrite($workingDir & $iniFileName, 'Extract', 'BZ2', $extractBZ2Command)
+;	IniWrite($workingDir & $iniFileName, 'Extract', 'TAR', $extractTARCommand)
+	IniWrite($workingDir & $iniFileName, 'Extract', '7Z', $extract7ZCommand)
 EndIf
 
 ;Load translations
@@ -172,9 +174,9 @@ If $architecture == $NOT_FOUND Then
 				ElseIf BitAND(GUICtrlRead($radioQTx), $GUI_CHECKED) = $GUI_CHECKED Then
 					$architecture = 'qt.x86_64'
 				ElseIf BitAND(GUICtrlRead($radioWINi), $GUI_CHECKED) = $GUI_CHECKED Then
-					$architecture = 'win32.i386'
+					$architecture = 'i386-win32'
 				ElseIf BitAND(GUICtrlRead($radioWINx), $GUI_CHECKED) = $GUI_CHECKED Then
-					$architecture = 'win32.x86_64'
+					$architecture = 'x86_64-win64'
 				Else
 					#Region --- CodeWizard generated code Start ---
 					;MsgBox features: Title=Yes, Text=Yes, Buttons=OK, Icon=None
@@ -196,14 +198,17 @@ If $architecture == $NOT_FOUND Then
 EndIf
 
 ;Read snapshots site (HTML)
-If $logFile <> "" Then _FileWriteLog($workingDir & $logFile, 'Reading update site: ' & $updateSite)
-Local $siteData = InetRead($updateSite)
+;$subPath = "arc/"
+$subPath = ""
+$revisionSite = $updateSite & $subPath & "revision.txt"
+If $logFile <> "" Then _FileWriteLog($workingDir & $logFile, 'Reading update site: ' & $revisionSite)
+Local $siteData = InetRead($revisionSite)
 If $siteData == "" And @error Then
-	If $logFile <> "" Then _FileWriteLog($workingDir & $logFile, '[ERROR] Can not read update site: ' & $updateSite)
+	If $logFile <> "" Then _FileWriteLog($workingDir & $logFile, '[ERROR] Cannot read update site: ' & $revisionSite)
 	If $errorSupressInetRead <> "yes" Then
 		#Region --- CodeWizard generated code Start ---
 		;MsgBox features: Title=Yes, Text=Yes, Buttons=OK, Icon=Critical
-		MsgBox(16,"ERROR","Could not find update site:" & @CRLF & '"' & $updateSite & '"')
+		MsgBox(16,"ERROR","Could not find update site:" & @CRLF & '"' & $revisionSite & '"')
 		#EndRegion --- CodeWizard generated code End ---
 	EndIf
 	okExit()
@@ -254,11 +259,11 @@ EndIf
 
 
 ;Construct filenames
-$tarFileName = $doublecmdVersion & $currentRevision & "." & $architecture & ".tar"
-$changelogFileName = $doublecmdVersion & $currentRevision & ".last.change.txt"
-$remoteFileName = $tarFileName & ".bz2"
-$changelogDownload = $updateSite & $changelogFileName
-$fileToDownload = $updateSite & $remoteFileName
+;$tarFileName = $doublecmdVersion & $currentRevision & "." & $architecture & ".tar"
+$changelogFileName = "changelog.txt"
+$remoteFileName = $doublecmdVersion & $currentRevision & "." & $architecture & ".7z"
+$changelogDownload = $updateSite & $subPath & $changelogFileName
+$fileToDownload = $updateSite & $subPath & $remoteFileName
 
 
 ; ----------------------------------
@@ -350,11 +355,11 @@ If $logFile <> "" Then _FileWriteLog($workingDir & $logFile, 'File downloaded to
 GUICtrlSetData($descriptionLabel, $tStatusExtractingLabel & ": ")
 GUICtrlSetData($completeLabel, "0 %")
 
-If $extractBZ2Command <> "" Then
-	$extractCommand = $extractBZ2Command & ' ' & $remoteFileName
-	If $logFile <> "" Then _FileWriteLog($workingDir & $logFile, 'Extracting bz2: ' & $extractCommand)
-	$bz2Extracted = RunWait($extractCommand, @ScriptDir, @SW_HIDE)
-	If $bz2Extracted == 0 And @error Then
+If $extract7ZCommand <> "" Then
+	$extractCommand = $extract7ZCommand & ' ' & $remoteFileName
+	If $logFile <> "" Then _FileWriteLog($workingDir & $logFile, 'Extracting 7z: ' & $extractCommand)
+	$zExtracted = RunWait($extractCommand, @ScriptDir, @SW_HIDE)
+	If $zExtracted == 0 And @error Then
 		#Region --- CodeWizard generated code Start ---
 		;MsgBox features: Title=Yes, Text=Yes, Buttons=OK, Icon=Critical
 		MsgBox(16,"ERROR","Could not execute command:" & @CRLF & $extractCommand)
@@ -363,21 +368,21 @@ If $extractBZ2Command <> "" Then
 		okExit()
 	EndIf
 
-	GUICtrlSetData($completeLabel, "50 %")
+	GUICtrlSetData($completeLabel, "100 %")
 
-	If $extractTARCommand <> "" Then
-		$extractCommand = $extractTARCommand & ' ' & $tarFileName
-		If $logFile <> "" Then _FileWriteLog($workingDir & $logFile, 'Extracting tar: ' & $extractCommand)
-		$tarExtracted = RunWait($extractCommand, @ScriptDir, @SW_HIDE)
-		If $bz2Extracted == 0 And @error Then
-			#Region --- CodeWizard generated code Start ---
-			;MsgBox features: Title=Yes, Text=Yes, Buttons=OK, Icon=Critical
-			MsgBox(16,"ERROR","Could not execute command:" & @CRLF & $extractCommand)
-			#EndRegion --- CodeWizard generated code End ---
-			cleanUpDownload()
-			okExit()
-		EndIf
-	EndIf
+;	If $extractTARCommand <> "" Then
+;		$extractCommand = $extractTARCommand & ' ' & $tarFileName
+;		If $logFile <> "" Then _FileWriteLog($workingDir & $logFile, 'Extracting tar: ' & $extractCommand)
+;		$tarExtracted = RunWait($extractCommand, @ScriptDir, @SW_HIDE)
+;		If $bz2Extracted == 0 And @error Then
+;			#Region --- CodeWizard generated code Start ---
+;			;MsgBox features: Title=Yes, Text=Yes, Buttons=OK, Icon=Critical
+;			MsgBox(16,"ERROR","Could not execute command:" & @CRLF & $extractCommand)
+;			#EndRegion --- CodeWizard generated code End ---
+;			cleanUpDownload()
+;			okExit()
+;		EndIf
+;	EndIf
 EndIf
 
 GUIDelete($StatusForm)
@@ -398,10 +403,10 @@ Func cleanUpDownload()
 			FileDelete($workingDir & $remoteFileName)
 		EndIf
 
-		If FileExists($workingDir & $tarFileName) Then
-			If $logFile <> "" Then _FileWriteLog($workingDir & $logFile, 'Removing file: ' & $tarFileName)
-			FileDelete($workingDir & $tarFileName)
-		EndIf
+;		If FileExists($workingDir & $tarFileName) Then
+;			If $logFile <> "" Then _FileWriteLog($workingDir & $logFile, 'Removing file: ' & $tarFileName)
+;			FileDelete($workingDir & $tarFileName)
+;		EndIf
 	Else
 		If $logFile <> "" Then _FileWriteLog($workingDir & $logFile, 'No clean up of downloaded files')
 	EndIf
@@ -439,12 +444,12 @@ Func promptSettings()
 	$Label9 = GUICtrlCreateLabel("Clean up:", 8, 192, 49, 17)
 	$checkboxDelete = GUICtrlCreateCheckbox("&Delete downloaded files on exit", 104, 192, 345, 17)
 	If $deleteDownloadedFiles == "yes" Then GuiCtrlSetState(-1, $GUI_CHECKED)
-	$Label10 = GUICtrlCreateLabel("Extract BZ2:", 8, 218, 63, 17)
-	$editExtractBz2 = GUICtrlCreateInput($extractBZ2Command, 104, 216, 345, 21)
-	GUICtrlSetTip(-1, "Command for extracting BZ2 file. Default value requires 7z in PATH")
-	$Label11 = GUICtrlCreateLabel("Extract TAR:", 8, 250, 65, 17)
-	$editExtractTar = GUICtrlCreateInput($extractTARCommand, 104, 248, 345, 21)
-	GUICtrlSetTip(-1, "Command for extracting TAR file. Default value requires 7z in PATH. Can be empty")
+	$Label10 = GUICtrlCreateLabel("Extract 7Z:", 8, 218, 63, 17)
+	$editExtract7z = GUICtrlCreateInput($extract7ZCommand, 104, 216, 345, 21)
+	GUICtrlSetTip(-1, "Command for extracting 7Z file. Default value requires 7z in PATH")
+;	$Label11 = GUICtrlCreateLabel("Extract TAR:", 8, 250, 65, 17)
+;	$editExtractTar = GUICtrlCreateInput($extractTARCommand, 104, 248, 345, 21)
+;	GUICtrlSetTip(-1, "Command for extracting TAR file. Default value requires 7z in PATH. Can be empty")
 	$editLogFile = GUICtrlCreateInput($logFile, 104, 312, 345, 21)
 	$buttonOk = GUICtrlCreateButton("&Ok", 376, 344, 75, 25, $WS_GROUP)
 	$buttonCancel = GUICtrlCreateButton("&Cancel", 296, 344, 75, 25, $WS_GROUP)
@@ -483,8 +488,9 @@ Func promptSettings()
 		$tempDelete = GUICtrlRead($deleteDownloadedFiles)
 		If $tempDelete Then $deleteDownloadedFiles = "yes"
 
-		$extractBZ2Command = GUICtrlRead($editExtractBz2)
-		$extractTARCommand = GUICtrlRead($editExtractTar)
+;		$extractBZ2Command = GUICtrlRead($editExtractBz2)
+;		$extractTARCommand = GUICtrlRead($editExtractTar)
+		$extract7ZCommand = GUICtrlRead($editExtract7z)
 	EndIf
 
 	GUIDelete($SettingsForm)
