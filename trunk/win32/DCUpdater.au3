@@ -58,7 +58,7 @@ Local $translationFile = IniRead($workingDir & $iniFileName, 'General', 'Transla
 
 Local $errorSupressInetRead = IniRead($workingDir & $iniFileName, 'Error', 'SupressInetRead', "yes")
 
-Local $updateSite = IniRead($workingDir & $iniFileName, 'Internet', 'UpdateSite', 'http://doublecmd.sourceforge.net/snapshots/')
+Local $updateSite = IniRead($workingDir & $iniFileName, 'Internet', 'UpdateSite', 'https://doublecmd.sourceforge.io/snapshots/')
 Local $regexGetRevision = IniRead($workingDir & $iniFileName, 'Internet', 'RegExGetRevision', "(?mis)(\d+).*")
 Local $doublecmdVersion = IniRead($workingDir & $iniFileName, 'Internet', 'DoublecmdVersion', "doublecmd-1.0.0.r")
 
