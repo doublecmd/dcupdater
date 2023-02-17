@@ -3,7 +3,7 @@
 #AutoIt3Wrapper_Outfile_x64=DCUpdater.exe
 #AutoIt3Wrapper_Res_Comment=Double Commander Snapshot Updater
 #AutoIt3Wrapper_Res_Description=Snapshot updater for Double Commander
-#AutoIt3Wrapper_Res_Fileversion=1.5.1.0
+#AutoIt3Wrapper_Res_Fileversion=1.5.2.0
 #EndRegion ;**** Directives created by AutoIt3Wrapper_GUI ****
 #include <File.au3>
 #include <Date.au3>
@@ -32,6 +32,11 @@ EndIf
 
 Local $fileDoubleCommander = $workingDir & 'doublecmd.exe'
 If Not FileExists($fileDoubleCommander) Then $fileDoubleCommander = $workingDir & 'doublecmd'
+
+Local $bPortable = True
+If Not FileExists($workingDir & 'doublecmd.inf') Then
+	$bPortable = False
+EndIf
 
 If $logFile <> "" Then _FileWriteLog($logFile, 'Checking write permissions on: ' & $fileDoubleCommander)
 Local $fileAttributes = FileGetAttrib($fileDoubleCommander)
@@ -364,6 +369,10 @@ If $extract7ZCommand <> "" Then
 		;MsgBox features: Title=Yes, Text=Yes, Buttons=OK, Icon=Critical
 		MsgBox(16,"ERROR","Could not execute command:" & @CRLF & $extractCommand)
 		#EndRegion --- CodeWizard generated code End ---
+		If $bPortable = False And FileExists($workingDir & 'doublecmd.inf') Then
+			FileSetAttrib($workingDir & 'doublecmd.inf', "-RST")
+			FileDelete($workingDir & 'doublecmd.inf')
+		EndIf
 		cleanUpDownload()
 		okExit()
 	EndIf
@@ -379,6 +388,10 @@ If $extract7ZCommand <> "" Then
 ;			;MsgBox features: Title=Yes, Text=Yes, Buttons=OK, Icon=Critical
 ;			MsgBox(16,"ERROR","Could not execute command:" & @CRLF & $extractCommand)
 ;			#EndRegion --- CodeWizard generated code End ---
+;			If $bPortable = False And FileExists($workingDir & 'doublecmd.inf') Then
+;				FileSetAttrib($workingDir & 'doublecmd.inf', "-RST")
+;				FileDelete($workingDir & 'doublecmd.inf')
+;			EndIf
 ;			cleanUpDownload()
 ;			okExit()
 ;		EndIf
