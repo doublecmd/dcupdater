@@ -60,7 +60,7 @@ Local $errorSupressInetRead = IniRead($workingDir & $iniFileName, 'Error', 'Supr
 
 Local $updateSite = IniRead($workingDir & $iniFileName, 'Internet', 'UpdateSite', 'https://doublecmd.sourceforge.io/snapshots/')
 Local $regexGetRevision = IniRead($workingDir & $iniFileName, 'Internet', 'RegExGetRevision', "(?mis)(\d+).*")
-Local $doublecmdVersion = IniRead($workingDir & $iniFileName, 'Internet', 'DoublecmdVersion', "doublecmd-1.1.0.r")
+Local $doublecmdVersion = IniRead($workingDir & $iniFileName, 'Internet', 'DoublecmdVersion', "doublecmd-1.2.0.r")
 
 Local $deleteDownloadedFiles = IniRead($workingDir & $iniFileName, 'Extract', 'DeleteDownloadedFiles', 'yes')
 
