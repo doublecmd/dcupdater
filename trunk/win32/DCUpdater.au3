@@ -15,14 +15,14 @@
 #include <ComboConstants.au3>
 
 Local $workingDir = @ScriptDir & '/'
-Const $iniFileName = 'dcupdater.ini'
+Local $iniFile = $workingDir & 'dcupdater.ini'
 Const $NOT_FOUND = ""
 
 ;Load default settings
-Local $logFile = IniRead($workingDir & $iniFileName, 'General', 'LogFile', $NOT_FOUND)
+Local $logFile = IniRead($iniFile, 'General', 'LogFile', $NOT_FOUND)
 
-LogW('Loading ini file settings: ' & $iniFileName)
-Local $postExec = IniRead($workingDir & $iniFileName, 'General', 'PostExecution', "doublecmd --no-console")
+LogW('Loading ini file settings: ' & $iniFile)
+Local $postExec = IniRead($iniFile, 'General', 'PostExecution', "doublecmd --no-console")
 
 LogW('Checking for doublecmd.exe/doublecmd')
 If Not FileExists($workingDir & 'doublecmd.exe') And Not FileExists($workingDir & 'doublecmd') Then
@@ -40,7 +40,7 @@ If StringInStr($fileAttributes, "R") Then
 	okExit()
 EndIf
 
-Local $update = IniRead($workingDir & $iniFileName, 'General', 'Update', 'ask')
+Local $update = IniRead($iniFile, 'General', 'Update', 'ask')
 
 ;Just exit if no update is necessary
 If $update <> "yes" And $update <> "ask" Then
@@ -50,48 +50,48 @@ EndIf
 
 Const $currentDate = _NowCalcDate()
 
-Local $architecture = IniRead($workingDir & $iniFileName, 'General', 'Architecture', $NOT_FOUND)
-Local $updateOnceADay = IniRead($workingDir & $iniFileName, 'General', 'UpdateOnceADay', 'yes')
-Local $lastRevision = IniRead($workingDir & $iniFileName, 'General', 'LastUpdatedRevision', $NOT_FOUND)
+Local $architecture = IniRead($iniFile, 'General', 'Architecture', $NOT_FOUND)
+Local $updateOnceADay = IniRead($iniFile, 'General', 'UpdateOnceADay', 'yes')
+Local $lastRevision = IniRead($iniFile, 'General', 'LastUpdatedRevision', $NOT_FOUND)
 
-Local $translationFile = IniRead($workingDir & $iniFileName, 'General', 'TranslationFile', $NOT_FOUND)
+Local $translationFile = IniRead($iniFile, 'General', 'TranslationFile', $NOT_FOUND)
 
-Local $errorSupressInetRead = IniRead($workingDir & $iniFileName, 'Error', 'SupressInetRead', "yes")
+Local $errorSupressInetRead = IniRead($iniFile, 'Error', 'SupressInetRead', "yes")
 
-Local $updateSite = IniRead($workingDir & $iniFileName, 'Internet', 'UpdateSite', 'https://doublecmd.sourceforge.io/snapshots/')
-Local $regexGetRevision = IniRead($workingDir & $iniFileName, 'Internet', 'RegExGetRevision', "(?mis)(\d+).*")
-Local $doublecmdVersion = IniRead($workingDir & $iniFileName, 'Internet', 'DoublecmdVersion', "doublecmd-1.2.0.r")
+Local $updateSite = IniRead($iniFile, 'Internet', 'UpdateSite', 'https://doublecmd.sourceforge.io/snapshots/')
+Local $regexGetRevision = IniRead($iniFile, 'Internet', 'RegExGetRevision', "(?mis)(\d+).*")
+Local $doublecmdVersion = IniRead($iniFile, 'Internet', 'DoublecmdVersion', "doublecmd-1.2.0.r")
 
-Local $deleteDownloadedFiles = IniRead($workingDir & $iniFileName, 'Extract', 'DeleteDownloadedFiles', 'yes')
+Local $deleteDownloadedFiles = IniRead($iniFile, 'Extract', 'DeleteDownloadedFiles', 'yes')
 
-;Local $extractBZ2Command = IniRead($workingDir & $iniFileName, 'Extract', 'BZ2', '7z x -y')
-;Local $extractTARCommand = IniRead($workingDir & $iniFileName, 'Extract', 'TAR', '7z x -y')
-Local $extract7ZCommand = IniRead($workingDir & $iniFileName, 'Extract', '7Z', '7z x -y')
+;Local $extractBZ2Command = IniRead($iniFile, 'Extract', 'BZ2', '7z x -y')
+;Local $extractTARCommand = IniRead($iniFile, 'Extract', 'TAR', '7z x -y')
+Local $extract7ZCommand = IniRead($iniFile, 'Extract', '7Z', '7z x -y')
 
 ;Create ini-file with defaults if first time
-If Not FileExists($workingDir & $iniFileName) Then
+If Not FileExists($iniFile) Then
 	promptSettings()
 
-	LogW('Writing defaults to ini file: ' & $iniFileName)
-    IniWrite($workingDir & $iniFileName, 'General', 'LogFile', $logFile)
-	IniWrite($workingDir & $iniFileName, 'General', 'Update', $update)
-	IniWrite($workingDir & $iniFileName, 'General', 'PostExecution', $postExec)
-	IniWrite($workingDir & $iniFileName, 'General', 'Architecture', $architecture)
-	IniWrite($workingDir & $iniFileName, 'General', 'UpdateOnceADay', $updateOnceADay)
-	IniWrite($workingDir & $iniFileName, 'General', 'LastUpdatedRevision', $lastRevision)
+	LogW('Writing defaults to ini file: ' & $iniFile)
+    IniWrite($iniFile, 'General', 'LogFile', $logFile)
+	IniWrite($iniFile, 'General', 'Update', $update)
+	IniWrite($iniFile, 'General', 'PostExecution', $postExec)
+	IniWrite($iniFile, 'General', 'Architecture', $architecture)
+	IniWrite($iniFile, 'General', 'UpdateOnceADay', $updateOnceADay)
+	IniWrite($iniFile, 'General', 'LastUpdatedRevision', $lastRevision)
 
-	IniWrite($workingDir & $iniFileName, 'General', 'TranslationFile', $translationFile)
+	IniWrite($iniFile, 'General', 'TranslationFile', $translationFile)
 
-	IniWrite($workingDir & $iniFileName, 'Error', 'SupressInetRead', $errorSupressInetRead)
+	IniWrite($iniFile, 'Error', 'SupressInetRead', $errorSupressInetRead)
 
-	IniWrite($workingDir & $iniFileName, 'Internet', 'UpdateSite', $updateSite)
-	IniWrite($workingDir & $iniFileName, 'Internet', 'RegExGetRevision', $regexGetRevision)
-	IniWrite($workingDir & $iniFileName, 'Internet', 'DoublecmdVersion', $doublecmdVersion)
+	IniWrite($iniFile, 'Internet', 'UpdateSite', $updateSite)
+	IniWrite($iniFile, 'Internet', 'RegExGetRevision', $regexGetRevision)
+	IniWrite($iniFile, 'Internet', 'DoublecmdVersion', $doublecmdVersion)
 
-	IniWrite($workingDir & $iniFileName, 'Extract', 'DeleteDownloadedFiles', $deleteDownloadedFiles)
-;	IniWrite($workingDir & $iniFileName, 'Extract', 'BZ2', $extractBZ2Command)
-;	IniWrite($workingDir & $iniFileName, 'Extract', 'TAR', $extractTARCommand)
-	IniWrite($workingDir & $iniFileName, 'Extract', '7Z', $extract7ZCommand)
+	IniWrite($iniFile, 'Extract', 'DeleteDownloadedFiles', $deleteDownloadedFiles)
+;	IniWrite($iniFile, 'Extract', 'BZ2', $extractBZ2Command)
+;	IniWrite($iniFile, 'Extract', 'TAR', $extractTARCommand)
+	IniWrite($iniFile, 'Extract', '7Z', $extract7ZCommand)
 EndIf
 
 ;Load translations
@@ -122,14 +122,14 @@ If $translationFile == $NOT_FOUND Then
 	IniWrite($translationFile, 'Translations', 'StatusDownloadLabel', 		$tStatusDownloadLabel)
 	IniWrite($translationFile, 'Translations', 'StatusExtractLabel', 		$tStatusExtractingLabel)
 
-	IniWrite($workingDir & $iniFileName, 'General', 'TranslationFile', $translationFile)
+	IniWrite($iniFile, 'General', 'TranslationFile', $translationFile)
 EndIf
 
 
 ;Return ok if already updated today
 If $updateOnceADay == "yes" Then
 	LogW('Update once a day')
-	Local $lastUpdateDate = IniRead($workingDir & $iniFileName, 'General', 'LastUpdateDate', $NOT_FOUND)
+	Local $lastUpdateDate = IniRead($iniFile, 'General', 'LastUpdateDate', $NOT_FOUND)
 
 	$dateDiff = _DateDiff('d', $lastUpdateDate, $currentDate)
 	$diffError = @error
@@ -184,7 +184,7 @@ If $architecture == $NOT_FOUND Then
 				EndIf
 
 				LogW('Writing new architecture settings to ini file: ' & $architecture)
-                IniWrite($workingDir & $iniFileName, 'General', 'Architecture', $architecture)
+                IniWrite($iniFile, 'General', 'Architecture', $architecture)
 				ExitLoop
 			Case $cancelButton
 				okExit()
@@ -230,7 +230,7 @@ If $lastRevision <> $NOT_FOUND And StringIsInt($currentRevision) And StringIsInt
 	$lRevision = Number($lastRevision)
 
 	If $lastRevision == $cRevision Or $lastRevision > $cRevision Then
-		IniWrite($workingDir & $iniFileName, 'General', 'LastUpdateDate', $currentDate)
+		IniWrite($iniFile, 'General', 'LastUpdateDate', $currentDate)
 		okExit()
 	EndIf
 ElseIf $lastRevision <> $NOT_FOUND And $lastRevision <> "" Then
@@ -385,8 +385,8 @@ EndIf
 GUIDelete($StatusForm)
 
 LogW('Writing to ini LastUpdateDate')
-IniWrite($workingDir & $iniFileName, 'General', 'LastUpdateDate', $currentDate)
-IniWrite($workingDir & $iniFileName, 'General', 'LastUpdatedRevision', $currentRevision)
+IniWrite($iniFile, 'General', 'LastUpdateDate', $currentDate)
+IniWrite($iniFile, 'General', 'LastUpdatedRevision', $currentRevision)
 
 cleanUpDownload()
 okExit()
