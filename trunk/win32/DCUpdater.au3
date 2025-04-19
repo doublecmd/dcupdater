@@ -15,83 +15,83 @@
 #include <ComboConstants.au3>
 
 Local $workingDir = @ScriptDir & '/'
-Const $iniFileName = 'dcupdater.ini'
+Local $iniFile = $workingDir & 'dcupdater.ini'
 Const $NOT_FOUND = ""
 
 ;Load default settings
-Local $logFile = IniRead($workingDir & $iniFileName, 'General', 'LogFile', $NOT_FOUND)
+Local $logFile = IniRead($iniFile, 'General', 'LogFile', $NOT_FOUND)
 
-If $logFile <> "" Then _FileWriteLog($workingDir & $logFile, 'Loading ini file settings: ' & $iniFileName)
-Local $postExec = IniRead($workingDir & $iniFileName, 'General', 'PostExecution', "doublecmd --no-console")
+LogW('Loading ini file settings: ' & $iniFile)
+Local $postExec = IniRead($iniFile, 'General', 'PostExecution', "doublecmd --no-console")
 
-If $logFile <> "" Then _FileWriteLog($logFile, 'Checking for doublecmd.exe/doublecmd')
+LogW('Checking for doublecmd.exe/doublecmd')
 If Not FileExists($workingDir & 'doublecmd.exe') And Not FileExists($workingDir & 'doublecmd') Then
-	If $logFile <> "" Then _FileWriteLog($logFile, 'Could not find file: doublecmd.exe/doublecmd')
-	okExit()
+	LogW('Could not find file: doublecmd.exe/doublecmd')
+    okExit()
 EndIf
 
 Local $fileDoubleCommander = $workingDir & 'doublecmd.exe'
 If Not FileExists($fileDoubleCommander) Then $fileDoubleCommander = $workingDir & 'doublecmd'
 
-If $logFile <> "" Then _FileWriteLog($logFile, 'Checking write permissions on: ' & $fileDoubleCommander)
+LogW('Checking write permissions on: ' & $fileDoubleCommander)
 Local $fileAttributes = FileGetAttrib($fileDoubleCommander)
 If StringInStr($fileAttributes, "R") Then
-	If $logFile <> "" Then _FileWriteLog($logFile, 'File is read-only, probably already running: ' & $fileDoubleCommander)
+	LogW('File is read-only, probably already running: ' & $fileDoubleCommander)
 	okExit()
 EndIf
 
-Local $update = IniRead($workingDir & $iniFileName, 'General', 'Update', 'ask')
+Local $update = IniRead($iniFile, 'General', 'Update', 'ask')
 
 ;Just exit if no update is necessary
 If $update <> "yes" And $update <> "ask" Then
-	If $logFile <> "" Then _FileWriteLog($workingDir & $logFile, 'Update is not "yes" or "ask": ' & $update)
+	LogW('Update is not "yes" or "ask": ' & $update)
 	okExit()
 EndIf
 
 Const $currentDate = _NowCalcDate()
 
-Local $architecture = IniRead($workingDir & $iniFileName, 'General', 'Architecture', $NOT_FOUND)
-Local $updateOnceADay = IniRead($workingDir & $iniFileName, 'General', 'UpdateOnceADay', 'yes')
-Local $lastRevision = IniRead($workingDir & $iniFileName, 'General', 'LastUpdatedRevision', $NOT_FOUND)
+Local $architecture = IniRead($iniFile, 'General', 'Architecture', $NOT_FOUND)
+Local $updateOnceADay = IniRead($iniFile, 'General', 'UpdateOnceADay', 'yes')
+Local $lastRevision = IniRead($iniFile, 'General', 'LastUpdatedRevision', $NOT_FOUND)
 
-Local $translationFile = IniRead($workingDir & $iniFileName, 'General', 'TranslationFile', $NOT_FOUND)
+Local $translationFile = IniRead($iniFile, 'General', 'TranslationFile', $NOT_FOUND)
 
-Local $errorSupressInetRead = IniRead($workingDir & $iniFileName, 'Error', 'SupressInetRead', "yes")
+Local $errorSupressInetRead = IniRead($iniFile, 'Error', 'SupressInetRead', "yes")
 
-Local $updateSite = IniRead($workingDir & $iniFileName, 'Internet', 'UpdateSite', 'https://doublecmd.sourceforge.io/snapshots/')
-Local $regexGetRevision = IniRead($workingDir & $iniFileName, 'Internet', 'RegExGetRevision', "(?mis)(\d+).*")
-Local $doublecmdVersion = IniRead($workingDir & $iniFileName, 'Internet', 'DoublecmdVersion', "doublecmd-1.2.0.r")
+Local $updateSite = IniRead($iniFile, 'Internet', 'UpdateSite', 'https://doublecmd.sourceforge.io/snapshots/')
+Local $regexGetRevision = IniRead($iniFile, 'Internet', 'RegExGetRevision', "(?mis)(\d+).*")
+Local $doublecmdVersion = IniRead($iniFile, 'Internet', 'DoublecmdVersion', "doublecmd-1.2.0.r")
 
-Local $deleteDownloadedFiles = IniRead($workingDir & $iniFileName, 'Extract', 'DeleteDownloadedFiles', 'yes')
+Local $deleteDownloadedFiles = IniRead($iniFile, 'Extract', 'DeleteDownloadedFiles', 'yes')
 
-;Local $extractBZ2Command = IniRead($workingDir & $iniFileName, 'Extract', 'BZ2', '7z x -y')
-;Local $extractTARCommand = IniRead($workingDir & $iniFileName, 'Extract', 'TAR', '7z x -y')
-Local $extract7ZCommand = IniRead($workingDir & $iniFileName, 'Extract', '7Z', '7z x -y')
+;Local $extractBZ2Command = IniRead($iniFile, 'Extract', 'BZ2', '7z x -y')
+;Local $extractTARCommand = IniRead($iniFile, 'Extract', 'TAR', '7z x -y')
+Local $extract7ZCommand = IniRead($iniFile, 'Extract', '7Z', '7z x -y')
 
 ;Create ini-file with defaults if first time
-If Not FileExists($workingDir & $iniFileName) Then
+If Not FileExists($iniFile) Then
 	promptSettings()
 
-	If $logFile <> "" Then _FileWriteLog($workingDir & $logFile, 'Writing defaults to ini file: ' & $iniFileName)
-	IniWrite($workingDir & $iniFileName, 'General', 'LogFile', $logFile)
-	IniWrite($workingDir & $iniFileName, 'General', 'Update', $update)
-	IniWrite($workingDir & $iniFileName, 'General', 'PostExecution', $postExec)
-	IniWrite($workingDir & $iniFileName, 'General', 'Architecture', $architecture)
-	IniWrite($workingDir & $iniFileName, 'General', 'UpdateOnceADay', $updateOnceADay)
-	IniWrite($workingDir & $iniFileName, 'General', 'LastUpdatedRevision', $lastRevision)
+	LogW('Writing defaults to ini file: ' & $iniFile)
+    IniWrite($iniFile, 'General', 'LogFile', $logFile)
+	IniWrite($iniFile, 'General', 'Update', $update)
+	IniWrite($iniFile, 'General', 'PostExecution', $postExec)
+	IniWrite($iniFile, 'General', 'Architecture', $architecture)
+	IniWrite($iniFile, 'General', 'UpdateOnceADay', $updateOnceADay)
+	IniWrite($iniFile, 'General', 'LastUpdatedRevision', $lastRevision)
 
-	IniWrite($workingDir & $iniFileName, 'General', 'TranslationFile', $translationFile)
+	IniWrite($iniFile, 'General', 'TranslationFile', $translationFile)
 
-	IniWrite($workingDir & $iniFileName, 'Error', 'SupressInetRead', $errorSupressInetRead)
+	IniWrite($iniFile, 'Error', 'SupressInetRead', $errorSupressInetRead)
 
-	IniWrite($workingDir & $iniFileName, 'Internet', 'UpdateSite', $updateSite)
-	IniWrite($workingDir & $iniFileName, 'Internet', 'RegExGetRevision', $regexGetRevision)
-	IniWrite($workingDir & $iniFileName, 'Internet', 'DoublecmdVersion', $doublecmdVersion)
+	IniWrite($iniFile, 'Internet', 'UpdateSite', $updateSite)
+	IniWrite($iniFile, 'Internet', 'RegExGetRevision', $regexGetRevision)
+	IniWrite($iniFile, 'Internet', 'DoublecmdVersion', $doublecmdVersion)
 
-	IniWrite($workingDir & $iniFileName, 'Extract', 'DeleteDownloadedFiles', $deleteDownloadedFiles)
-;	IniWrite($workingDir & $iniFileName, 'Extract', 'BZ2', $extractBZ2Command)
-;	IniWrite($workingDir & $iniFileName, 'Extract', 'TAR', $extractTARCommand)
-	IniWrite($workingDir & $iniFileName, 'Extract', '7Z', $extract7ZCommand)
+	IniWrite($iniFile, 'Extract', 'DeleteDownloadedFiles', $deleteDownloadedFiles)
+;	IniWrite($iniFile, 'Extract', 'BZ2', $extractBZ2Command)
+;	IniWrite($iniFile, 'Extract', 'TAR', $extractTARCommand)
+	IniWrite($iniFile, 'Extract', '7Z', $extract7ZCommand)
 EndIf
 
 ;Load translations
@@ -122,19 +122,18 @@ If $translationFile == $NOT_FOUND Then
 	IniWrite($translationFile, 'Translations', 'StatusDownloadLabel', 		$tStatusDownloadLabel)
 	IniWrite($translationFile, 'Translations', 'StatusExtractLabel', 		$tStatusExtractingLabel)
 
-	IniWrite($workingDir & $iniFileName, 'General', 'TranslationFile', $translationFile)
+	IniWrite($iniFile, 'General', 'TranslationFile', $translationFile)
 EndIf
 
 
 ;Return ok if already updated today
 If $updateOnceADay == "yes" Then
-	If $logFile <> "" Then _FileWriteLog($workingDir & $logFile, 'Update once a day')
-	Local $lastUpdateDate = IniRead($workingDir & $iniFileName, 'General', 'LastUpdateDate', $NOT_FOUND)
+	LogW('Update once a day')
+	Local $lastUpdateDate = IniRead($iniFile, 'General', 'LastUpdateDate', $NOT_FOUND)
 
 	$dateDiff = _DateDiff('d', $lastUpdateDate, $currentDate)
 	$diffError = @error
-	$logMessage = 'Comparing last update date "' & $lastUpdateDate & '" and "' & $currentDate & '" = ' & $dateDiff & ', @error = ' & $diffError
-	If $logFile <> "" Then _FileWriteLog($workingDir & $logFile, $logMessage)
+	LogW('Comparing last update date "' & $lastUpdateDate & '" and "' & $currentDate & '" = ' & $dateDiff & ', @error = ' & $diffError)
 	If $dateDiff < 1 And $diffError == 0 Then
 		okExit()
 	EndIf
@@ -142,8 +141,7 @@ EndIf
 
 ;Ask for architecture if not set
 If $architecture == $NOT_FOUND Then
-	If $logFile <> "" Then _FileWriteLog($workingDir & $logFile, 'Architecture setting not found')
-	If $logFile <> "" Then _FileWriteLog($workingDir & $logFile, 'Creating architecture settings GUI')
+	LogW('Architecture setting not found. Creating architecture settings GUI')
 	$Form1_1 = GUICreate($tArchitectureFormTitle, 281, 227, 192, 114)
 	$Group1 = GUICtrlCreateGroup($tArchitectureGroupTitle & ": ", 8, 8, 265, 177)
 	$radioGTKi = GUICtrlCreateRadio("GTK2 [i386]", 24, 32, 113, 17)
@@ -155,7 +153,7 @@ If $architecture == $NOT_FOUND Then
 	GUICtrlCreateGroup("", -99, -99, 1, 1)
 	$okButton = GUICtrlCreateButton($tOKButton, 184, 192, 81, 25, $WS_GROUP)
 	$cancelButton = GUICtrlCreateButton($tCancelButton, 104, 192, 73, 25, $WS_GROUP)
-	If $logFile <> "" Then _FileWriteLog($workingDir & $logFile, 'Show architecture settings GUI')
+	LogW('Show architecture settings GUI')
 	GUISetState(@SW_SHOW)
 
 	While 1
@@ -185,26 +183,26 @@ If $architecture == $NOT_FOUND Then
 					okExit()
 				EndIf
 
-				If $logFile <> "" Then _FileWriteLog($workingDir & $logFile, 'Writing new architecture settings to ini file: ' & $architecture)
-				IniWrite($workingDir & $iniFileName, 'General', 'Architecture', $architecture)
+				LogW('Writing new architecture settings to ini file: ' & $architecture)
+                IniWrite($iniFile, 'General', 'Architecture', $architecture)
 				ExitLoop
 			Case $cancelButton
 				okExit()
 		EndSwitch
 	WEnd
 
-	If $logFile <> "" Then _FileWriteLog($workingDir & $logFile, 'Deleting architecture settings GUI')
-	GUIDelete($Form1_1)
+	LogW('Deleting architecture settings GUI')
+    GUIDelete($Form1_1)
 EndIf
 
 ;Read snapshots site (HTML)
 ;$subPath = "arc/"
 $subPath = ""
 $revisionSite = $updateSite & $subPath & "revision.txt"
-If $logFile <> "" Then _FileWriteLog($workingDir & $logFile, 'Reading update site: ' & $revisionSite)
+LogW('Reading update site: ' & $revisionSite)
 Local $siteData = InetRead($revisionSite)
 If $siteData == "" And @error Then
-	If $logFile <> "" Then _FileWriteLog($workingDir & $logFile, '[ERROR] Cannot read update site: ' & $revisionSite)
+	LogW('[ERROR] Cannot read update site: ' & $revisionSite)
 	If $errorSupressInetRead <> "yes" Then
 		#Region --- CodeWizard generated code Start ---
 		;MsgBox features: Title=Yes, Text=Yes, Buttons=OK, Icon=Critical
@@ -214,30 +212,29 @@ If $siteData == "" And @error Then
 	okExit()
 EndIf
 
-If $logFile <> "" Then _FileWriteLog($workingDir & $logFile, 'Converting site data to string')
+LogW('Converting site data to string')
 $updateSiteString = BinaryToString($siteData)
 
-If $logFile <> "" Then _FileWriteLog($workingDir & $logFile, 'Finding revision string using: ' & $regexGetRevision)
+LogW('Finding revision string using: ' & $regexGetRevision)
 $currentRevision = StringRegExpReplace($updateSiteString, $regexGetRevision, "$1")
 
 If StringIsInt($currentRevision) == 0 Then
-	If $logFile <> "" Then _FileWriteLog($workingDir & $logFile, 'Found revision string is not a number: "' & $currentRevision & '"')
-	okExit()
+	LogW('Found revision string is not a number: "' & $currentRevision & '"')
+    okExit()
 EndIf
 
 ;Check if update is necessary
-$logMessage = 'Checking latest updated revision (last revision: ' & $lastRevision & ', remote revision: ' & $currentRevision & ')'
-If $logFile <> "" Then _FileWriteLog($workingDir & $logFile, $logMessage)
+LogW('Checking latest updated revision (last revision: ' & $lastRevision & ', remote revision: ' & $currentRevision & ')')
 If $lastRevision <> $NOT_FOUND And StringIsInt($currentRevision) And StringIsInt($lastRevision) Then
 	$cRevision = Number($currentRevision)
 	$lRevision = Number($lastRevision)
 
 	If $lastRevision == $cRevision Or $lastRevision > $cRevision Then
-		IniWrite($workingDir & $iniFileName, 'General', 'LastUpdateDate', $currentDate)
+		IniWrite($iniFile, 'General', 'LastUpdateDate', $currentDate)
 		okExit()
 	EndIf
 ElseIf $lastRevision <> $NOT_FOUND And $lastRevision <> "" Then
-	If $logFile <> "" Then _FileWriteLog($workingDir & $logFile, "[ERROR] Could not compare numbers")
+    LogW('[ERROR] Could not compare numbers')
 	okExit()
 EndIf
 
@@ -269,11 +266,11 @@ $fileToDownload = $updateSite & $subPath & $remoteFileName
 ; ----------------------------------
 ;	Download change log
 ; ----------------------------------
-If $logFile <> "" Then _FileWriteLog($workingDir & $logFile, 'Downloading changelog: ' & $changelogDownload)
+LogW('Downloading changelog: ' & $changelogDownload)
 Local $changelogText = ""
 Local $changelogData = InetRead($changelogDownload, 1)
 If @error Then
-	If $logFile <> "" Then _FileWriteLog($workingDir & $logFile, '[ERROR] Could not download changelog data')
+    LogW('[ERROR] Could not download changelog data')
 Else
 	$changelogText = BinaryToString($changelogData)
 	$changelogText = StringRegExpReplace($changelogText, "\r?\n", @CRLF)
@@ -285,15 +282,15 @@ EndIf
 ;	Download the file
 ; ----------------------------------
 ;Get file size
-If $logFile <> "" Then _FileWriteLog($workingDir & $logFile, 'Checking remote file size (' & $fileToDownload & ')')
+LogW('Checking remote file size (' & $fileToDownload & ')')
 Local $remoteFileSize = InetGetSize($fileToDownload, 1)
 
-If $logFile <> "" Then _FileWriteLog($workingDir & $logFile, 'Remote file size: ' & $remoteFileSize & ' [@error: ' & @error & ']')
+LogW('Remote file size: ' & $remoteFileSize & ' [@error: ' & @error & ']')
 If $remoteFileSize == 0 Then
 	okExit()
 EndIf
 
-If $logFile <> "" Then _FileWriteLog($workingDir & $logFile, 'Creating GUI for status')
+LogW('Creating GUI for status')
 $StatusForm = GUICreate($tStatusFormTitle, 370, 385, 192, 114)
 $descriptionLabel = GUICtrlCreateLabel($tStatusDownloadLabel & ": ", 8, 8, 72, 17)
 $completeLabe = GUICtrlCreateLabel( $tStatusCompleteLabel & ":", 8, 32, 51, 17)
@@ -303,12 +300,12 @@ $fileNameLabel = GUICtrlCreateLabel($remoteFileName, 88, 8, 250, 17)
 $changelogLabel = GUICtrlCreateLabel($tChangelogLabel & ": ", 8, 56, 58, 17)
 $changelogEdit = GUICtrlCreateEdit($changelogText, 8, 80, 353, 265, BitOR($ES_MULTILINE, $ES_AUTOVSCROLL,$ES_AUTOHSCROLL,$ES_READONLY,$ES_WANTRETURN,$WS_HSCROLL,$WS_VSCROLL))
 
-If $logFile <> "" Then _FileWriteLog($workingDir & $logFile, 'Show GUI for status')
+LogW('Show GUI for status')
 GUISetState(@SW_SHOW)
 
 ;Start the download
 Local $lastComplete = -1
-If $logFile <> "" Then _FileWriteLog($workingDir & $logFile, 'Starting download: ' & $fileToDownload & ' -> ' & $remoteFileName)
+LogW('Starting download: ' & $fileToDownload & ' -> ' & $remoteFileName)
 $hDownload = InetGet($fileToDownload, $workingDir & $remoteFileName, 1, 1)
 Do
 	Local $downloadedBytes = InetGetInfo($hDownload, 0)
@@ -320,14 +317,14 @@ Do
 	$nMsg = GUIGetMsg()
 	Switch $nMsg
 		Case $GUI_EVENT_CLOSE
-			If $logFile <> "" Then _FileWriteLog($workingDir & $logFile, 'Window closed, canceling download.')
+            LogW('Window closed, canceling download.')
 			InetClose($hDownload)
 			GUIDelete($StatusForm)
 			cleanUpDownload()
 			okExit()
 
 		Case $cancelButton
-			If $logFile <> "" Then _FileWriteLog($workingDir & $logFile, 'Cancel pressed, canceling download.')
+            LogW('Cancel pressed, canceling download.')
 			InetClose($hDownload)
 			GUIDelete($StatusForm)
 			cleanUpDownload()
@@ -341,7 +338,7 @@ Local $downloadError = InetGetInfo($hDownload, 4)
 InetClose($hDownload)
 
 If $downloadError <> 0 Then
-	If $logFile <> "" Then _FileWriteLog($workingDir & $logFile, '[ERROR] Download error: ' & $downloadError)
+    LogW('[ERROR] Download error: ' & $downloadError)
 	#Region --- CodeWizard generated code Start ---
 	;MsgBox features: Title=Yes, Text=Yes, Buttons=OK, Icon=Critical
 	MsgBox(16,"ERROR","Could not download snapshot:" & @CRLF & '"' & $fileToDownload & '"')
@@ -350,14 +347,14 @@ If $downloadError <> 0 Then
 	okExit()
 EndIf
 
-If $logFile <> "" Then _FileWriteLog($workingDir & $logFile, 'File downloaded to: ' & $remoteFileName & ' (size: ' & $remoteFileSize & ')')
+LogW('File downloaded to: ' & $remoteFileName & ' (size: ' & $remoteFileSize & ')')
 
 GUICtrlSetData($descriptionLabel, $tStatusExtractingLabel & ": ")
 GUICtrlSetData($completeLabel, "0 %")
 
 If $extract7ZCommand <> "" Then
 	$extractCommand = $extract7ZCommand & ' ' & $remoteFileName
-	If $logFile <> "" Then _FileWriteLog($workingDir & $logFile, 'Extracting 7z: ' & $extractCommand)
+    LogW('Extracting 7z: ' & $extractCommand)
 	$zExtracted = RunWait($extractCommand, @ScriptDir, @SW_HIDE)
 	If $zExtracted == 0 And @error Then
 		#Region --- CodeWizard generated code Start ---
@@ -387,19 +384,19 @@ EndIf
 
 GUIDelete($StatusForm)
 
-If $logFile <> "" Then _FileWriteLog($workingDir & $logFile, 'Writing to ini LastUpdateDate')
-IniWrite($workingDir & $iniFileName, 'General', 'LastUpdateDate', $currentDate)
-IniWrite($workingDir & $iniFileName, 'General', 'LastUpdatedRevision', $currentRevision)
+LogW('Writing to ini LastUpdateDate')
+IniWrite($iniFile, 'General', 'LastUpdateDate', $currentDate)
+IniWrite($iniFile, 'General', 'LastUpdatedRevision', $currentRevision)
 
 cleanUpDownload()
 okExit()
 
 Func cleanUpDownload()
 	If $deleteDownloadedFiles == "yes" Then
-		If $logFile <> "" Then _FileWriteLog($workingDir & $logFile, 'Clean up downloaded files')
+        LogW('Clean up downloaded files')
 
 		If FileExists($workingDir & $remoteFileName) Then
-			If $logFile <> "" Then _FileWriteLog($workingDir & $logFile, 'Removing file: ' & $remoteFileName)
+            LogW('Removing file: ' & $remoteFileName)
 			FileDelete($workingDir & $remoteFileName)
 		EndIf
 
@@ -408,17 +405,17 @@ Func cleanUpDownload()
 ;			FileDelete($workingDir & $tarFileName)
 ;		EndIf
 	Else
-		If $logFile <> "" Then _FileWriteLog($workingDir & $logFile, 'No clean up of downloaded files')
+        LogW('No clean up of downloaded files')
 	EndIf
 EndFunc
 
 Func okExit()
 	If $postExec <> "" Then
-		If $logFile <> "" Then _FileWriteLog($workingDir & $logFile, 'PostExecuting: ' & $postExec)
+        LogW('PostExecuting: ' & $postExec)
 		Run($postExec)
 	EndIf
 
-	If $logFile <> "" Then _FileWriteLog($workingDir & $logFile, '******** Exiting script ********')
+    LogW('******** Exiting script ********')
 	Exit
 EndFunc
 
@@ -495,4 +492,10 @@ Func promptSettings()
 
 	GUIDelete($SettingsForm)
 
+EndFunc
+
+
+; Write to log file
+Func LogW(ByRef $msg)
+    If $logFile <> "" Then _FileWriteLog($logFile, $msg)
 EndFunc
