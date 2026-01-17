@@ -60,7 +60,7 @@ Local $errorSupressInetRead = IniRead($iniFile, 'Error', 'SupressInetRead', "yes
 
 Local $updateSite = IniRead($iniFile, 'Internet', 'UpdateSite', 'https://doublecmd.sourceforge.io/snapshots/')
 Local $regexGetRevision = IniRead($iniFile, 'Internet', 'RegExGetRevision', "(?mis)(\d+).*")
-Local $doublecmdVersion = IniRead($iniFile, 'Internet', 'DoublecmdVersion', "doublecmd-1.2.0.r")
+Local $doublecmdVersion = IniRead($iniFile, 'Internet', 'DoublecmdVersion', "doublecmd-1.3.0.r")
 
 Local $deleteDownloadedFiles = IniRead($iniFile, 'Extract', 'DeleteDownloadedFiles', 'yes')
 
@@ -498,4 +498,5 @@ EndFunc
 ; Write to log file
 Func LogW(ByRef $msg)
     If $logFile <> "" Then _FileWriteLog($logFile, $msg)
+
 EndFunc
