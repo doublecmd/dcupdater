@@ -1,3 +1,5 @@
+# Replaced by [Double Commander Updater](https://github.com/doublecmd/updater)
+
 DCUpdater is a simple script for updating Double Commander to current snapshot.
 
 Features:
